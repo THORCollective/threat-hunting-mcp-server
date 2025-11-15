@@ -31,6 +31,15 @@ A next-generation Model Context Protocol (MCP) server that **thinks like an expe
 - **Canary Files**: Executive documents, credentials, source code with embedded beacons
 - **High-Confidence Detection**: 95-99% confidence with <1% false positive rate
 
+### Community Knowledge Base ⭐ NEW
+- **HEARTH Integration**: Access 50+ community-curated threat hunting hypotheses
+- **Hypothesis-Driven Hunts (Flames)**: Real-world attack scenarios from practitioners
+- **Baseline Hunts (Embers)**: Environmental baselining and exploratory analysis
+- **Model-Assisted Hunts (Alchemy)**: ML and algorithmic detection approaches
+- **AI-Powered Recommendations**: Personalized hunt suggestions for your environment
+- **Tactic Coverage Analysis**: Identify gaps across MITRE ATT&CK tactics
+- **Incident-Based Suggestions**: Get relevant hunts based on incident descriptions
+
 ### Traditional Capabilities
 - **Natural Language Processing**: Convert queries into executable threat hunts
 - **Atlassian Integration**: Confluence and Jira for knowledge management
@@ -81,11 +90,22 @@ A next-generation Model Context Protocol (MCP) server that **thinks like an expe
    - **Atlassian** ([src/integrations/atlassian.py](src/integrations/atlassian.py)): Confluence/Jira integration
    - **Splunk** ([src/integrations/splunk.py](src/integrations/splunk.py)): Query execution and ML analysis
 
-6. **Intelligence Engine** ([src/intelligence/threat_intel.py](src/intelligence/threat_intel.py))
-   - MITRE ATT&CK framework
-   - Pyramid of Pain implementation
-   - Diamond Model analysis
-   - Cyber Kill Chain mapping
+6. **Intelligence Engine**
+   - **MITRE ATT&CK** ([src/intelligence/threat_intel.py](src/intelligence/threat_intel.py))
+     - MITRE ATT&CK framework
+     - Pyramid of Pain implementation
+     - Diamond Model analysis
+     - Cyber Kill Chain mapping
+   - **HEARTH Integration** ([src/intelligence/hearth_integration.py](src/intelligence/hearth_integration.py)) ⭐ NEW
+     - Community hunt repository access
+     - Hunt search and recommendation engine
+     - Tactic coverage analysis
+     - Incident-based hunt suggestions
+     - 50+ curated threat hunting hypotheses
+   - **THOR Collective** ([src/intelligence/thor_collective.py](src/intelligence/thor_collective.py))
+     - Community threat hunting knowledge
+     - THRF (Threat Hunting Relevancy Factors)
+     - Thrunting philosophy integration
 
 7. **NLP Processing** ([src/nlp/hunt_nlp.py](src/nlp/hunt_nlp.py))
    - Natural language query processing
@@ -197,6 +217,57 @@ Comprehensive threat actor analysis.
 result = await analyze_adversary(adversary_id="G0016")  # APT29
 ```
 
+#### HEARTH Community Hunts ⭐ NEW
+
+##### `search_community_hunts`
+Search community-curated threat hunting hypotheses.
+
+```python
+result = await search_community_hunts(
+    tactic="Credential Access",
+    tags=["lateral_movement", "powershell"],
+    keyword="brute force",
+    hunt_type="flame",  # or "ember", "alchemy"
+    limit=20
+)
+```
+
+##### `get_hunt_by_id`
+Retrieve specific community hunt.
+
+```python
+result = await get_hunt_by_id(hunt_id="H001")
+```
+
+##### `recommend_hunts`
+Get AI-powered hunt recommendations.
+
+```python
+result = await recommend_hunts(
+    tactics=["Credential Access", "Lateral Movement"],
+    techniques=["T1110", "T1078"],
+    keywords=["active directory", "kerberos"],
+    environment="Windows AD environment",
+    limit=10
+)
+```
+
+##### `suggest_hunts_for_incident`
+Get hunt suggestions based on incident.
+
+```python
+result = await suggest_hunts_for_incident(
+    incident_description="Suspicious PowerShell activity detected on domain controller"
+)
+```
+
+##### `analyze_tactic_coverage`
+Analyze MITRE ATT&CK tactic coverage.
+
+```python
+result = await analyze_tactic_coverage()
+```
+
 ### MCP Resources
 
 - `hunting_playbooks`: Retrieve playbooks from Confluence
@@ -279,6 +350,68 @@ Developed by the Dutch Payments Association (Betaalvereniging), TaHiTI (Targeted
 1. **Adversary Understanding**: Know threat actors and TTPs
 2. **Telemetry and Data**: Comprehensive visibility
 3. **Business Impact Analysis**: Understand crown jewels
+
+## HEARTH Community Integration ⭐ NEW
+
+The MCP server integrates with **[HEARTH](https://github.com/THORCollective/HEARTH)** (Hunting Exchange and Research Threat Hub), a community-driven repository of 50+ curated threat hunting hypotheses.
+
+### What is HEARTH?
+
+HEARTH is an open-source platform where security professionals share, discover, and collaborate on threat hunting ideas. It uses the PEAK framework to categorize hunts:
+
+- **🔥 Flames (H-prefix)**: Hypothesis-driven hunts with clear, testable objectives
+- **🪵 Embers (B-prefix)**: Baselining and exploratory analysis to understand environments
+- **🔮 Alchemy (M-prefix)**: Model-assisted and algorithmic approaches to detection
+
+### Integration Features
+
+1. **Community Hunt Access**: Query 50+ professionally-curated hunt hypotheses
+2. **Search & Filter**: Find hunts by tactic, technique, tags, or keywords
+3. **AI Recommendations**: Get personalized hunt suggestions based on your environment
+4. **Tactic Coverage**: Identify gaps in your hunting program across MITRE ATT&CK
+5. **Incident Response**: Get relevant hunts based on incident descriptions
+6. **Real-Time Updates**: Access the latest community contributions
+
+### Example Usage
+
+Search for credential access hunts:
+```python
+hunts = await search_community_hunts(
+    tactic="Credential Access",
+    tags=["brute_force", "vpn"],
+    limit=10
+)
+```
+
+Get recommendations for your environment:
+```python
+recommendations = await recommend_hunts(
+    tactics=["Lateral Movement", "Persistence"],
+    keywords=["active directory", "domain controller"],
+    environment="Windows enterprise"
+)
+```
+
+Analyze your tactic coverage:
+```python
+coverage = await analyze_tactic_coverage()
+# Returns hunt counts across all MITRE ATT&CK tactics
+```
+
+### HEARTH Resources
+
+- **Live Database**: [https://thorcollective.github.io/HEARTH/](https://thorcollective.github.io/HEARTH/)
+- **GitHub Repository**: [https://github.com/THORCollective/HEARTH](https://github.com/THORCollective/HEARTH)
+- **Submit Hunts**: [https://github.com/THORCollective/HEARTH/issues/new/choose](https://github.com/THORCollective/HEARTH/issues/new/choose)
+
+### Contributing to HEARTH
+
+The MCP server reads from your local HEARTH repository. To contribute new hunts:
+
+1. Clone HEARTH: `git clone https://github.com/THORCollective/HEARTH.git`
+2. Submit via [CTI Submission](https://github.com/THORCollective/HEARTH/issues/new?template=cti_submission.yml) (AI-powered)
+3. Or submit via [Manual Hunt](https://github.com/THORCollective/HEARTH/issues/new?template=hunt_submission_form.yml)
+4. Your contributions become available to the entire community!
 
 ## Security
 

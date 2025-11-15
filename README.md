@@ -97,8 +97,8 @@ A next-generation Model Context Protocol (MCP) server that **thinks like an expe
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd threat_hunting_mcp
+   git clone https://github.com/THORCollective/threat-hunting-mcp-server
+   cd threat-hunting-mcp-server
    ```
 
 2. **Install dependencies**:

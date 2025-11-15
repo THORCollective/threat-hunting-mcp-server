@@ -35,7 +35,10 @@ class Settings(BaseSettings):
     
     # ML/NLP
     spacy_model: str = "en_core_web_lg"
-    
+
+    # HEARTH Community Integration
+    hearth_path: Optional[str] = None
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

@@ -13,6 +13,7 @@ from .intelligence.threat_intel import ThreatIntelligenceEngine
 from .nlp.hunt_nlp import ThreatHuntingNLP
 from .security.security_manager import SecurityManager, CacheManager
 from .models.hunt import ThreatHunt, HuntType
+from .tools.hearth_tools import HEARTHTools
 
 
 # Configure logging
@@ -62,7 +63,11 @@ class ThreatHuntingMCPServer:
         
         self.threat_intel = ThreatIntelligenceEngine()
         self.nlp = ThreatHuntingNLP()
-        
+
+        # Initialize HEARTH community integration
+        hearth_path = getattr(settings, 'hearth_path', None)
+        self.hearth = HEARTHTools(hearth_path) if hearth_path else None
+
         # Initialize security and caching
         security_config = {
             'jwt_secret': settings.jwt_secret,
@@ -389,7 +394,181 @@ class ThreatHuntingMCPServer:
             except Exception as e:
                 logger.error("Error enriching IOC", error=str(e))
                 return {'error': str(e), 'status': 'failed'}
-    
+
+        # ===== HEARTH COMMUNITY TOOLS =====
+        if self.hearth:
+            @self.mcp.tool()
+            async def search_community_hunts(
+                tactic: Optional[str] = None,
+                tags: Optional[List[str]] = None,
+                keyword: Optional[str] = None,
+                hunt_type: Optional[str] = None,
+                limit: int = 20
+            ) -> Dict:
+                """Search HEARTH community threat hunting hypotheses
+
+                Args:
+                    tactic: Filter by MITRE ATT&CK tactic (e.g. "Credential Access")
+                    tags: Filter by tags (e.g. ["lateral_movement", "powershell"])
+                    keyword: Search keyword in hypothesis and description
+                    hunt_type: Filter by hunt type: "flame", "ember", or "alchemy"
+                    limit: Maximum number of results (default 20)
+
+                Returns:
+                    Dictionary with search results and metadata
+                """
+                try:
+                    return await self.hearth.search_community_hunts(
+                        tactic=tactic,
+                        tags=tags,
+                        keyword=keyword,
+                        hunt_type=hunt_type,
+                        limit=limit
+                    )
+                except Exception as e:
+                    logger.error("Error searching HEARTH hunts", error=str(e))
+                    return {'error': str(e), 'status': 'failed'}
+
+            @self.mcp.tool()
+            async def get_hunt_by_id(hunt_id: str) -> Dict:
+                """Retrieve a specific community hunt by ID
+
+                Args:
+                    hunt_id: Hunt identifier (e.g. 'H001', 'B002', 'M003')
+
+                Returns:
+                    Dictionary with hunt details
+                """
+                try:
+                    return await self.hearth.get_hunt_by_id(hunt_id)
+                except Exception as e:
+                    logger.error("Error getting hunt by ID", hunt_id=hunt_id, error=str(e))
+                    return {'error': str(e), 'status': 'failed'}
+
+            @self.mcp.tool()
+            async def recommend_hunts(
+                tactics: Optional[List[str]] = None,
+                techniques: Optional[List[str]] = None,
+                keywords: Optional[List[str]] = None,
+                environment: Optional[str] = None,
+                limit: int = 10
+            ) -> Dict:
+                """Get AI-powered hunt recommendations from community knowledge
+
+                Args:
+                    tactics: MITRE ATT&CK tactics of interest
+                    techniques: MITRE ATT&CK technique IDs
+                    keywords: Keywords describing your concerns
+                    environment: Environment description (e.g. "Windows AD environment")
+                    limit: Maximum recommendations (default 10)
+
+                Returns:
+                    Dictionary with ranked hunt recommendations
+                """
+                try:
+                    return await self.hearth.recommend_hunts(
+                        tactics=tactics,
+                        techniques=techniques,
+                        keywords=keywords,
+                        environment=environment,
+                        limit=limit
+                    )
+                except Exception as e:
+                    logger.error("Error generating recommendations", error=str(e))
+                    return {'error': str(e), 'status': 'failed'}
+
+            @self.mcp.tool()
+            async def suggest_hunts_for_incident(incident_description: str) -> Dict:
+                """Get hunt suggestions based on incident description
+
+                Args:
+                    incident_description: Description of the security incident
+
+                Returns:
+                    Dictionary with suggested hunts
+                """
+                try:
+                    return await self.hearth.suggest_hunts_for_incident(incident_description)
+                except Exception as e:
+                    logger.error("Error suggesting hunts for incident", error=str(e))
+                    return {'error': str(e), 'status': 'failed'}
+
+            @self.mcp.tool()
+            async def analyze_tactic_coverage() -> Dict:
+                """Analyze MITRE ATT&CK tactic coverage in community hunts
+
+                Returns:
+                    Dictionary with tactic coverage analysis
+                """
+                try:
+                    return await self.hearth.analyze_tactic_coverage()
+                except Exception as e:
+                    logger.error("Error analyzing tactic coverage", error=str(e))
+                    return {'error': str(e), 'status': 'failed'}
+
+            @self.mcp.tool()
+            async def get_hearth_statistics() -> Dict:
+                """Get statistics about HEARTH community repository
+
+                Returns:
+                    Dictionary with repository statistics
+                """
+                try:
+                    return await self.hearth.get_hearth_statistics()
+                except Exception as e:
+                    logger.error("Error getting HEARTH statistics", error=str(e))
+                    return {'error': str(e), 'status': 'failed'}
+
+            @self.mcp.tool()
+            async def get_hunts_for_tactic(tactic: str, limit: int = 20) -> Dict:
+                """Get community hunts for a MITRE ATT&CK tactic
+
+                Args:
+                    tactic: MITRE ATT&CK tactic name (e.g. "Credential Access")
+                    limit: Maximum number of hunts (default 20)
+
+                Returns:
+                    Dictionary with hunt list for the tactic
+                """
+                try:
+                    return await self.hearth.get_hunts_for_tactic(tactic, limit)
+                except Exception as e:
+                    logger.error("Error getting hunts for tactic", tactic=tactic, error=str(e))
+                    return {'error': str(e), 'status': 'failed'}
+
+            @self.mcp.tool()
+            async def get_hunts_for_technique(technique_id: str) -> Dict:
+                """Get community hunts for a MITRE ATT&CK technique
+
+                Args:
+                    technique_id: MITRE ATT&CK technique ID (e.g. "T1110")
+
+                Returns:
+                    Dictionary with hunt list for the technique
+                """
+                try:
+                    return await self.hearth.get_hunts_for_technique(technique_id)
+                except Exception as e:
+                    logger.error("Error getting hunts for technique", technique=technique_id, error=str(e))
+                    return {'error': str(e), 'status': 'failed'}
+
+            @self.mcp.tool()
+            async def get_recent_community_hunts(days: int = 30, limit: int = 20) -> Dict:
+                """Get recently added community hunts
+
+                Args:
+                    days: Number of days to look back (default 30)
+                    limit: Maximum number of hunts (default 20)
+
+                Returns:
+                    Dictionary with recent hunts
+                """
+                try:
+                    return await self.hearth.get_recent_community_hunts(days, limit)
+                except Exception as e:
+                    logger.error("Error getting recent hunts", error=str(e))
+                    return {'error': str(e), 'status': 'failed'}
+
     def _register_resources(self):
         """Registers MCP resources"""
         

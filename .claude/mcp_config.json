@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "threat-hunting": {
+      "command": "python3",
+      "args": ["-u", "/Users/sydney/code/01-threat-hunting/threat_hunting_mcp/run_server.py"],
+      "env": {
+        "PYTHONPATH": "/Users/sydney/code/01-threat-hunting/threat_hunting_mcp"
+      }
+    }
+  }
+}

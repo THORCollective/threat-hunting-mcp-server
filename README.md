@@ -120,7 +120,55 @@ A next-generation Model Context Protocol (MCP) server that **thinks like an expe
    - Audit logging
    - Rate limiting
 
-## Installation
+## Quick Start (HEARTH Integration Only)
+
+The fastest way to get started with community hunt knowledge:
+
+1. **Clone repositories**:
+   ```bash
+   git clone https://github.com/THORCollective/threat-hunting-mcp-server
+   cd threat-hunting-mcp-server
+
+   # Clone HEARTH repository (required for community hunts)
+   git clone https://github.com/THORCollective/HEARTH ../HEARTH
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Configure environment** (minimal setup):
+   ```bash
+   cp .env.example .env
+   # The .env file is already configured with HEARTH_PATH
+   # You can use it as-is for HEARTH features
+   ```
+
+4. **Connect to Claude Code**:
+
+   Add to your Claude Code settings (`.claude/config.json` or settings UI):
+   ```json
+   {
+     "mcpServers": {
+       "threat-hunting": {
+         "command": "python3",
+         "args": ["-u", "/Users/sydney/code/01-threat-hunting/threat_hunting_mcp/run_server.py"]
+       }
+     }
+   }
+   ```
+
+5. **Start using it**:
+
+   Open Claude Code and try natural language queries:
+   - "Show me HEARTH hunts for credential access"
+   - "Recommend threat hunts for my Windows AD environment"
+   - "What's the tactic coverage in HEARTH?"
+
+## Full Installation
+
+For complete functionality including Splunk, Atlassian, and ML features:
 
 1. **Clone the repository**:
    ```bash
@@ -141,7 +189,7 @@ A next-generation Model Context Protocol (MCP) server that **thinks like an expe
 4. **Configure environment**:
    ```bash
    cp .env.example .env
-   # Edit .env with your configuration
+   # Edit .env with your Splunk/Atlassian credentials
    ```
 
 ## Configuration

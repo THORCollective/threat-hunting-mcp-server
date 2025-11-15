@@ -7,6 +7,7 @@ A next-generation Model Context Protocol (MCP) server that **thinks like an expe
 ### Core Hunting Frameworks
 - **PEAK Methodology**: Prepare, Execute, Act with Knowledge - state-of-the-art framework
 - **SQRRL Framework**: Hunting Maturity Model (HMM0-HMM4) progression
+- **TaHiTI Framework** ⭐ NEW: Targeted Hunting integrating Threat Intelligence (3 phases, 6 steps)
 - **Intelligence-Driven**: Hypothesis-driven hunting using threat intelligence
 
 ### Advanced Cognitive Capabilities ⭐ NEW
@@ -42,10 +43,16 @@ A next-generation Model Context Protocol (MCP) server that **thinks like an expe
 
 ### Core Components
 
-1. **Hunt Framework** ([src/frameworks/hunt_framework.py](src/frameworks/hunt_framework.py))
-   - PEAK methodology implementation
-   - SQRRL framework components
-   - Intelligence-driven hunting approach
+1. **Hunt Frameworks**
+   - **PEAK/SQRRL** ([src/frameworks/hunt_framework.py](src/frameworks/hunt_framework.py))
+     - PEAK methodology implementation
+     - SQRRL framework components
+     - Intelligence-driven hunting approach
+   - **TaHiTI** ([src/frameworks/tahiti.py](src/frameworks/tahiti.py)) ⭐ NEW
+     - 3-phase methodology (Initialize, Hunt, Finalize)
+     - 6-step process with continuous threat intelligence integration
+     - Hunt backlog management and prioritization
+     - Automated handover to security processes
 
 2. **Cognitive Module** ([src/cognitive/hunter_brain.py](src/cognitive/hunter_brain.py)) ⭐ NEW
    - Expert threat hunter cognitive patterns
@@ -204,6 +211,49 @@ result = await analyze_adversary(adversary_id="G0016")  # APT29
 
 ## Hunting Methodologies
 
+### TaHiTI Framework ⭐ NEW
+
+Developed by the Dutch Payments Association (Betaalvereniging), TaHiTI (Targeted Hunting integrating Threat Intelligence) provides a standardized, repeatable methodology combining threat intelligence with threat hunting practices.
+
+**Three Phases**:
+1. **Initialize**: Process input
+   - Step 1: Trigger - Receive initial hunt trigger
+   - Step 2: Abstract - Create hunt abstract and add to backlog
+
+2. **Hunt**: Execution phase
+   - Step 3: Hypothesis - Formulate focused hypothesis using intelligence
+   - Step 4: Investigation - Execute targeted hunting with continuous TI enrichment
+
+3. **Finalize**: Process output
+   - Step 5: Validation - Validate hypothesis based on evidence
+   - Step 6: Handover - Hand over results to relevant processes
+
+**Core Principles**:
+- **Intelligence-Driven Focus**: Threat intelligence drives all hunting activities
+- **Contextual Enrichment**: Continuous intelligence enrichment throughout investigation
+- **Risk-Based Prioritization**: Focus on highest-risk threats aligned with TI
+- **Collaborative Foundation**: Information sharing within security communities
+
+**Trigger Sources**:
+- Threat intelligence reports
+- Security incidents
+- Vulnerability disclosures
+- Anomaly detection alerts
+- Peer intelligence sharing
+- Scheduled baseline hunts
+- Red team exercises
+
+**Handover Processes**:
+- Incident Response (with IOCs and priority)
+- Security Monitoring (with detection rules)
+- Threat Intelligence (with intelligence gaps identified)
+- Vulnerability Management
+- Detection Engineering
+- Risk Management
+- Security Architecture
+
+**Supporting Tool**: MaGMa for Threat Hunting provides process guidance and improvement insights.
+
 ### PEAK Framework
 
 **Phases**:
@@ -213,7 +263,7 @@ result = await analyze_adversary(adversary_id="G0016")  # APT29
 
 **Hunt Types**:
 - **Hypothesis-Driven**: Test specific hypotheses about adversary behavior
-- **Baseline**: Establish normal patterns to identify anomalies  
+- **Baseline**: Establish normal patterns to identify anomalies
 - **Model-Assisted (M-ATH)**: Use ML for anomaly detection
 
 ### SQRRL Framework

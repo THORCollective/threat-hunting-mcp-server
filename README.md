@@ -374,7 +374,17 @@ threat_hunting_mcp/
 
 ## License
 
-[Your License Here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Responsible Use
+
+This is a defensive security tool designed for:
+- Threat hunting and detection
+- Security monitoring and analysis
+- Incident response and investigation
+- Security research and education
+
+By using this software, you agree to use it only for lawful and authorized security purposes. Always obtain proper authorization before conducting security activities in any environment.
 
 ## Support
 

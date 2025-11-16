@@ -326,28 +326,9 @@ For complete functionality including Splunk, Atlassian, and ML features:
 
 ## Configuration
 
-### Environment Variables
+Copy `.env.example` to `.env` and configure required integrations: **Atlassian** (URL, username, API token) • **Splunk** (host, port, auth token) • **Security** (JWT secret, encryption key) • **Redis** (connection details, optional).
 
-Copy `.env.example` to `.env` and configure:
-
-- **Atlassian**: URL, username, and API token
-- **Splunk**: Host, port, and authentication token  
-- **Security**: JWT secret and encryption key
-- **Redis**: Connection details (optional)
-- **Logging**: Paths and levels
-
-### Atlassian Setup
-
-1. Create API token in Atlassian account settings
-2. Set up Confluence space for threat hunting documentation
-3. Create Jira project for hunt tracking
-4. Configure custom fields for hunt metadata (optional)
-
-### Splunk Setup
-
-1. Create authentication token in Splunk
-2. Ensure user has search permissions
-3. Configure appropriate indexes for hunting
+See [PRODUCTION.md](PRODUCTION.md) for detailed configuration examples, security hardening, and deployment best practices.
 
 ## Usage
 
@@ -357,339 +338,76 @@ Copy `.env.example` to `.env` and configure:
 python -m src.server
 ```
 
-### MCP Tools
+### Key MCP Tools
 
-#### `hunt_threats`
-Natural language threat hunting interface.
+**Core Hunting Tools:**
+- `hunt_threats(query, framework)` - Natural language threat hunting interface
+- `get_server_health()` - Server diagnostics and feature availability
+- `analyze_adversary(adversary_id)` - Threat actor analysis (e.g., G0016 for APT29)
 
-```python
-# Example usage
-result = await hunt_threats(
-    query="Find lateral movement using RDP in the last 24 hours",
-    framework="PEAK"
-)
-```
+**HEARTH Community Tools:**
+- `search_community_hunts(tactic, tags, keyword)` - Search 50+ community hunt hypotheses
+- `recommend_hunts(tactics, keywords, environment)` - AI-powered hunt recommendations
+- `suggest_hunts_for_incident(description)` - Incident-driven hunt suggestions
 
-#### `create_baseline`
-Establish baselines for normal behavior.
+**PEAK Framework Tools:**
+- `create_behavioral_hunt(technique_id, hypothesis, ...)` - Create PEAK hunt reports
+- `suggest_behavioral_hunt_from_ioc(ioc, ioc_type)` - Pivot IOCs to behavioral hunts
+- `list_peak_hunts()` - List created hunt reports
 
-```python
-result = await create_baseline(
-    environment="production",
-    metrics=["login_count", "process_count"]
-)
-```
+**20+ additional tools available** - see full API documentation for complete tool reference with examples.
 
-#### `analyze_with_ml`
-Model-Assisted Threat Hunting using machine learning.
+### Example: Search Community Hunts
 
 ```python
-result = await analyze_with_ml(
-    data_source="endpoint_logs",
-    algorithm="isolation_forest"
-)
-```
-
-#### `analyze_adversary`
-Comprehensive threat actor analysis.
-
-```python
-result = await analyze_adversary(adversary_id="G0016")  # APT29
-```
-
-#### HEARTH Community Hunts ⭐ NEW
-
-##### `search_community_hunts`
-Search community-curated threat hunting hypotheses.
-
-```python
-result = await search_community_hunts(
+# Search for credential access hunts
+hunts = await search_community_hunts(
     tactic="Credential Access",
-    tags=["lateral_movement", "powershell"],
-    keyword="brute force",
-    hunt_type="flame",  # or "ember", "alchemy"
-    limit=20
+    tags=["lateral_movement"],
+    limit=5
 )
 ```
 
-##### `get_hunt_by_id`
-Retrieve specific community hunt.
+### Example: Create Behavioral Hunt
 
 ```python
-result = await get_hunt_by_id(hunt_id="H001")
-```
-
-##### `recommend_hunts`
-Get AI-powered hunt recommendations.
-
-```python
-result = await recommend_hunts(
-    tactics=["Credential Access", "Lateral Movement"],
-    techniques=["T1110", "T1078"],
-    keywords=["active directory", "kerberos"],
-    environment="Windows AD environment",
-    limit=10
-)
-```
-
-##### `suggest_hunts_for_incident`
-Get hunt suggestions based on incident.
-
-```python
-result = await suggest_hunts_for_incident(
-    incident_description="Suspicious PowerShell activity detected on domain controller"
-)
-```
-
-##### `analyze_tactic_coverage`
-Analyze MITRE ATT&CK tactic coverage.
-
-```python
-result = await analyze_tactic_coverage()
-```
-
-#### PEAK Framework Tools ⭐ NEW
-
-##### `create_behavioral_hunt`
-Create a behavioral PEAK hunt focused on a MITRE ATT&CK technique.
-
-```python
-result = await create_behavioral_hunt(
-    technique_id="T1003.001",
-    technique_name="LSASS Memory",
-    tactic="Credential Access",
-    hypothesis="Hunt for processes accessing LSASS memory for credential theft",
-    hunter_name="Alice Hunter",
-    location="Corporate Windows Servers",
-    data_sources=[
-        {
-            "source": "Sysmon Event ID 10 (ProcessAccess)",
-            "key_fields": "SourceImage, TargetImage, GrantedAccess, CallTrace",
-            "example": 'TargetImage="*lsass.exe" with GrantedAccess=0x1010'
-        },
-        {
-            "source": "Windows Security Event 4656",
-            "key_fields": "ProcessName, ObjectName, AccessMask",
-            "example": "Process accessing lsass.exe with handle access"
-        }
-    ],
-    actor="APT29",  # Optional
-    threat_intel_sources=["MITRE ATT&CK", "CISA Alert AA21-148A"],
-    related_tickets={"SOC/IR": "INC-2024-001"}
-)
-```
-
-##### `create_custom_peak_hunt`
-Create a custom PEAK hunt with full control over all fields.
-
-```python
-result = await create_custom_peak_hunt(
-    hunt_title="Hunt for Kerberoasting Activity",
-    hypothesis="Detect Kerberoasting by hunting for RC4 TGS requests",
-    hunter_name="Bob Hunter",
-    behavior_description="Kerberoasting (T1558.003) - RC4 ticket requests for service accounts",
-    location="Active Directory Domain Controllers",
-    data_sources=[
-        {
-            "source": "Windows Event 4769",
-            "key_fields": "ServiceName, TicketEncryptionType, IpAddress",
-            "example": "TicketEncryptionType=0x17 (RC4) for service accounts"
-        }
-    ],
-    mitre_techniques=["T1558.003 - Kerberoasting"],
-    mitre_tactics=["Credential Access"],
-    hunt_type="H"  # H = Hypothesis-driven, B = Baseline, M = Model-Assisted
-)
-```
-
-##### `get_peak_template`
-Get the PEAK Framework template for reference.
-
-```python
-result = await get_peak_template()
-# Returns template content, usage instructions, and reference link
-```
-
-##### `list_peak_hunts`
-List all created PEAK hunts.
-
-```python
-result = await list_peak_hunts()
-# Returns list of hunts with IDs, filenames, and creation dates
-```
-
-##### `suggest_behavioral_hunt_from_ioc`
-**KEY TOOL**: Pivot from IOCs to behavioral hunts (Pyramid of Pain philosophy).
-
-```python
-# When you receive an IOC, pivot to behavioral hunting
-result = await suggest_behavioral_hunt_from_ioc(
+# Pivot from IOC to behavioral detection
+behavioral_hunt = await suggest_behavioral_hunt_from_ioc(
     ioc="192.168.1.100",
     ioc_type="ip"
 )
-# Returns behavioral hunt suggestions focusing on TTPs instead of the IOC
+# Returns TTP-focused hunt suggestions instead of IOC-based detection
 ```
-
-**Example Response**:
-```json
-{
-  "pyramid_warning": "⚠️  IP is at the BOTTOM of the Pyramid of Pain. Adversaries change these rapidly.",
-  "behavioral_alternatives": [
-    {
-      "technique": "T1071.001 - Application Layer Protocol (Web)",
-      "hunt_focus": "C2 beaconing behavior patterns",
-      "hypothesis": "Hunt for regular interval communication patterns...",
-      "pyramid_level": "TTPs (Top)"
-    }
-  ],
-  "recommendation": "Create a behavioral PEAK hunt using one of the suggestions above"
-}
-```
-
-### MCP Resources
-
-- `hunting_playbooks`: Retrieve playbooks from Confluence
-- `threat_intelligence`: Get threat intelligence data
-- `mitre_attack_matrix`: Access MITRE ATT&CK framework
-- `hunting_methodologies`: Framework documentation
-
-### MCP Prompts
-
-- `hypothesis_builder`: Interactive hypothesis creation
-- `hunt_planner`: Comprehensive hunt planning
 
 ## Hunting Methodologies
 
 ### TaHiTI Framework ⭐ NEW
 
-Developed by the Dutch Payments Association (Betaalvereniging), TaHiTI (Targeted Hunting integrating Threat Intelligence) provides a standardized, repeatable methodology combining threat intelligence with threat hunting practices.
-
-**Three Phases**:
-1. **Initialize**: Process input
-   - Step 1: Trigger - Receive initial hunt trigger
-   - Step 2: Abstract - Create hunt abstract and add to backlog
-
-2. **Hunt**: Execution phase
-   - Step 3: Hypothesis - Formulate focused hypothesis using intelligence
-   - Step 4: Investigation - Execute targeted hunting with continuous TI enrichment
-
-3. **Finalize**: Process output
-   - Step 5: Validation - Validate hypothesis based on evidence
-   - Step 6: Handover - Hand over results to relevant processes
-
-**Core Principles**:
-- **Intelligence-Driven Focus**: Threat intelligence drives all hunting activities
-- **Contextual Enrichment**: Continuous intelligence enrichment throughout investigation
-- **Risk-Based Prioritization**: Focus on highest-risk threats aligned with TI
-- **Collaborative Foundation**: Information sharing within security communities
-
-**Trigger Sources**:
-- Threat intelligence reports
-- Security incidents
-- Vulnerability disclosures
-- Anomaly detection alerts
-- Peer intelligence sharing
-- Scheduled baseline hunts
-- Red team exercises
-
-**Handover Processes**:
-- Incident Response (with IOCs and priority)
-- Security Monitoring (with detection rules)
-- Threat Intelligence (with intelligence gaps identified)
-- Vulnerability Management
-- Detection Engineering
-- Risk Management
-- Security Architecture
-
-**Supporting Tool**: MaGMa for Threat Hunting provides process guidance and improvement insights.
+Developed by the Dutch Payments Association, TaHiTI (Targeted Hunting integrating Threat Intelligence) provides a standardized methodology combining threat intelligence with hunting practices. The framework features three phases: **Initialize** (trigger and abstract), **Hunt** (hypothesis and investigation), and **Finalize** (validation and handover). Built on intelligence-driven focus with continuous enrichment, risk-based prioritization, and collaborative information sharing.
 
 ### PEAK Framework
 
-**Phases**:
-1. **Prepare**: Research, understand data, frame hypotheses
-2. **Execute**: Analyze data, follow leads, connect dots
-3. **Act with Knowledge**: Document findings, create detections
-
-**Hunt Types**:
-- **Hypothesis-Driven**: Test specific hypotheses about adversary behavior
-- **Baseline**: Establish normal patterns to identify anomalies
-- **Model-Assisted (M-ATH)**: Use ML for anomaly detection
+Simple, practical framework with three phases: **Prepare** (research and hypotheses), **Execute** (analyze and investigate), **Act with Knowledge** (document and detect). Supports three hunt types: Hypothesis-Driven, Baseline, and Model-Assisted (M-ATH).
 
 ### SQRRL Framework
 
-**Components**:
-- **Hunting Maturity Model**: HMM0-HMM4 capability levels
-- **Hunt Loop**: Hypothesis → Investigate → Patterns → Analytics
-- **Hunt Matrix**: Activities mapped to maturity levels
+Features a Hunting Maturity Model (HMM0-HMM4), Hunt Loop (Hypothesis → Investigate → Patterns → Analytics), and Hunt Matrix mapping activities to maturity levels.
 
-### Intelligence-Driven Methodology
-
-**Requirements**:
-1. **Adversary Understanding**: Know threat actors and TTPs
-2. **Telemetry and Data**: Comprehensive visibility
-3. **Business Impact Analysis**: Understand crown jewels
+**See [FRAMEWORKS.md](FRAMEWORKS.md) for detailed framework documentation, examples, and implementation guidance.**
 
 ## HEARTH Community Integration ⭐ NEW
 
-The MCP server integrates with **[HEARTH](https://github.com/THORCollective/HEARTH)** (Hunting Exchange and Research Threat Hub), a community-driven repository of 50+ curated threat hunting hypotheses.
+Integrates with **[HEARTH](https://github.com/THORCollective/HEARTH)** (Hunting Exchange and Research Threat Hub), an open-source repository of 50+ professionally-curated threat hunting hypotheses. HEARTH uses PEAK framework categories: 🔥 **Flames** (hypothesis-driven), 🪵 **Embers** (baseline), 🔮 **Alchemy** (model-assisted).
 
-### What is HEARTH?
+**Key Features:** Search by tactic/technique/tags • AI-powered hunt recommendations • Tactic coverage analysis • Incident-driven hunt suggestions • Real-time community updates
 
-HEARTH is an open-source platform where security professionals share, discover, and collaborate on threat hunting ideas. It uses the PEAK framework to categorize hunts:
-
-- **🔥 Flames (H-prefix)**: Hypothesis-driven hunts with clear, testable objectives
-- **🪵 Embers (B-prefix)**: Baselining and exploratory analysis to understand environments
-- **🔮 Alchemy (M-prefix)**: Model-assisted and algorithmic approaches to detection
-
-### Integration Features
-
-1. **Community Hunt Access**: Query 50+ professionally-curated hunt hypotheses
-2. **Search & Filter**: Find hunts by tactic, technique, tags, or keywords
-3. **AI Recommendations**: Get personalized hunt suggestions based on your environment
-4. **Tactic Coverage**: Identify gaps in your hunting program across MITRE ATT&CK
-5. **Incident Response**: Get relevant hunts based on incident descriptions
-6. **Real-Time Updates**: Access the latest community contributions
-
-### Example Usage
-
-Search for credential access hunts:
+**Quick Example:**
 ```python
-hunts = await search_community_hunts(
-    tactic="Credential Access",
-    tags=["brute_force", "vpn"],
-    limit=10
-)
+hunts = await search_community_hunts(tactic="Credential Access", tags=["brute_force"])
+recommendations = await recommend_hunts(environment="Windows AD")
 ```
 
-Get recommendations for your environment:
-```python
-recommendations = await recommend_hunts(
-    tactics=["Lateral Movement", "Persistence"],
-    keywords=["active directory", "domain controller"],
-    environment="Windows enterprise"
-)
-```
-
-Analyze your tactic coverage:
-```python
-coverage = await analyze_tactic_coverage()
-# Returns hunt counts across all MITRE ATT&CK tactics
-```
-
-### HEARTH Resources
-
-- **Live Database**: [https://thorcollective.github.io/HEARTH/](https://thorcollective.github.io/HEARTH/)
-- **GitHub Repository**: [https://github.com/THORCollective/HEARTH](https://github.com/THORCollective/HEARTH)
-- **Submit Hunts**: [https://github.com/THORCollective/HEARTH/issues/new/choose](https://github.com/THORCollective/HEARTH/issues/new/choose)
-
-### Contributing to HEARTH
-
-The MCP server reads from your local HEARTH repository. To contribute new hunts:
-
-1. Clone HEARTH: `git clone https://github.com/THORCollective/HEARTH.git`
-2. Submit via [CTI Submission](https://github.com/THORCollective/HEARTH/issues/new?template=cti_submission.yml) (AI-powered)
-3. Or submit via [Manual Hunt](https://github.com/THORCollective/HEARTH/issues/new?template=hunt_submission_form.yml)
-4. Your contributions become available to the entire community!
+**Resources:** [Live Database](https://thorcollective.github.io/HEARTH/) • [GitHub Repo](https://github.com/THORCollective/HEARTH) • [Submit Hunts](https://github.com/THORCollective/HEARTH/issues/new/choose)
 
 ## Security
 

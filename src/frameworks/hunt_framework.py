@@ -21,7 +21,8 @@ class ThreatHuntingFramework:
             "ttps",
         ]
 
-    def create_hypothesis_driven_hunt(self, hypothesis: str, adversary: str, impact_scenario: str) -> ThreatHunt:
+    def create_hypothesis_driven_hunt(
+            self, hypothesis: str, adversary: str, impact_scenario: str) -> ThreatHunt:
         """Creates a hypothesis-driven hunt following Gigamon methodology"""
         if not self._validate_hypothesis(hypothesis):
             raise ValueError("Hypothesis must be specific and testable")
@@ -124,7 +125,8 @@ class ThreatHuntingFramework:
 
         for source in data_sources:
             if source == "windows_events":
-                queries.append(f"index=windows EventCode=4624 OR EventCode=4625 | stats count by Account_Name")
+                queries.append(
+                    f"index=windows EventCode=4624 OR EventCode=4625 | stats count by Account_Name")
             elif source == "network_logs":
                 queries.append(f"index=network | stats count by src_ip, dest_ip")
             elif source == "authentication_logs":

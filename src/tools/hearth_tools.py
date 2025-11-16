@@ -69,7 +69,12 @@ class HEARTHTools:
                     h_type = HuntType.ALCHEMY
 
             # Search hunts
-            hunts = self.repo.search_hunts(tactic=tactic, tags=tags, hunt_type=h_type, keyword=keyword, limit=limit)
+            hunts = self.repo.search_hunts(
+                tactic=tactic,
+                tags=tags,
+                hunt_type=h_type,
+                keyword=keyword,
+                limit=limit)
 
             return {
                 "success": True,
@@ -99,7 +104,8 @@ class HEARTHTools:
             hunt = self.repo.get_hunt_by_id(hunt_id)
 
             if not hunt:
-                return {"success": False, "error": f"Hunt {hunt_id} not found in HEARTH repository", "hunt_id": hunt_id}
+                return {"success": False,
+                        "error": f"Hunt {hunt_id} not found in HEARTH repository", "hunt_id": hunt_id}
 
             return {"success": True, "hunt": hunt.to_dict(), "source": "HEARTH Community Repository"}
 
@@ -161,7 +167,8 @@ class HEARTHTools:
 
         except Exception as e:
             logger.error(f"Error getting hunts for technique {technique_id}: {e}")
-            return {"success": False, "error": str(e), "technique_id": technique_id, "count": 0, "hunts": []}
+            return {"success": False, "error": str(
+                e), "technique_id": technique_id, "count": 0, "hunts": []}
 
     async def recommend_hunts(
         self,

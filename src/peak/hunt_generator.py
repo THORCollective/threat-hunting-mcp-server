@@ -133,7 +133,9 @@ class PEAKHuntGenerator:
         # ABLE Scoping
         actor_text = hunt.able_scope.actor if hunt.able_scope.actor else "N/A - Hunting behaviors across all actors"
         report = report.replace("`[Threat Actor or N/A]`", f"`{actor_text}`")
-        report = report.replace("`[Describe observed or expected behavior]`", f"`{hunt.able_scope.behavior}`")
+        report = report.replace(
+            "`[Describe observed or expected behavior]`", f"`{
+                hunt.able_scope.behavior}`")
         report = report.replace("`[Location]`", f"`{hunt.able_scope.location}`")
 
         # Replace evidence section
@@ -173,7 +175,8 @@ class PEAKHuntGenerator:
 
         # Add lessons learned if provided
         if hunt.lessons_learned:
-            report = report.replace("- **What worked well?**", f"{hunt.lessons_learned}\n\n- **What worked well?**")
+            report = report.replace("- **What worked well?**",
+                                    f"{hunt.lessons_learned}\n\n- **What worked well?**")
 
         return report
 
@@ -188,7 +191,8 @@ class PEAKHuntGenerator:
             key_fields = item.get("key_fields", "[Critical Fields]")
             example = item.get("example", "[Expected Example of Malicious Activity]")
 
-            evidence_parts.append(f"`- Source: {source}`<br>`- Key Fields: {key_fields}`<br>`- Example: {example}`")
+            evidence_parts.append(
+                f"`- Source: {source}`<br>`- Key Fields: {key_fields}`<br>`- Example: {example}`")
 
         return "<br><br>".join(evidence_parts)
 
@@ -204,7 +208,8 @@ class PEAKHuntGenerator:
         for technique in techniques:
             lines.append(f"  - `{technique}`")
 
-        return "\n".join(lines) if lines else "- `TAxxxx - Tactic Name`\n  - `Txxxx - Technique Name`"
+        return "\n".join(
+            lines) if lines else "- `TAxxxx - Tactic Name`\n  - `Txxxx - Technique Name`"
 
     def _format_related_tickets(self, tickets: Dict[str, str]) -> str:
         """Formats related tickets section"""
@@ -222,14 +227,18 @@ class PEAKHuntGenerator:
         report = report.replace(
             "| **SOC/IR**                      | [Insert related ticket or incident details] |", f"| **SOC/IR**                      | {soc_ticket} |"
         )
-        report = report.replace("| **Threat Intel (TI)**            | [Insert related ticket] |", f"| **Threat Intel (TI)**            | {ti_ticket} |")
+        report = report.replace(
+            "| **Threat Intel (TI)**            | [Insert related ticket] |",
+            f"| **Threat Intel (TI)**            | {ti_ticket} |")
         report = report.replace(
             "| **Detection Engineering (DE)**   | [Insert related ticket] |", f"| **Detection Engineering (DE)**   | {de_ticket} |"
         )
         report = report.replace(
             "| **Red Team / Pen Testing**       | [Insert related ticket] |", f"| **Red Team / Pen Testing**       | {redteam_ticket} |"
         )
-        report = report.replace("| **Other**                        | [Insert related ticket] |", f"| **Other**                        | {other_ticket} |")
+        report = report.replace(
+            "| **Other**                        | [Insert related ticket] |",
+            f"| **Other**                        | {other_ticket} |")
 
         return report
 

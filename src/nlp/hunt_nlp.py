@@ -466,7 +466,8 @@ class ThreatHuntingNLP:
                 f'index=dns query="{ioc}"',
             ]
         elif ioc_type == "domain":
-            return [f'index=dns query="*{ioc}*"', f'index=proxy url="*{ioc}*"', f'index=network dest_domain="{ioc}"']
+            return [f'index=dns query="*{ioc}*"', f'index=proxy url="*{ioc}*"',
+                    f'index=network dest_domain="{ioc}"']
         elif ioc_type == "hash":
             return [f'index=endpoint hash="{ioc}"', f'index=file_hash hash="{ioc}"']
         else:
@@ -543,7 +544,11 @@ class ThreatHuntingNLP:
 
     def _get_pyramid_level(self, ioc_type: str) -> str:
         """Gets Pyramid of Pain level for IOC type"""
-        mapping = {"hash": "hash_values", "ip": "ip_addresses", "domain": "domain_names", "url": "network_artifacts"}
+        mapping = {
+            "hash": "hash_values",
+            "ip": "ip_addresses",
+            "domain": "domain_names",
+            "url": "network_artifacts"}
         return mapping.get(ioc_type, "unknown")
 
     def _get_peak_methodology(self) -> Dict:

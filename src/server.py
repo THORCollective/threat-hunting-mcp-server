@@ -20,11 +20,8 @@ except ImportError:
 from .models.hunt import HuntType, ThreatHunt
 from .models.validators import (
     AnalyzeAdversaryRequest,
-    CreateBaselineRequest,
     EnrichIOCRequest,
     ExecuteCustomQueryRequest,
-    GetHuntsForTacticRequest,
-    GetHuntsForTechniqueRequest,
     SearchCommunityHuntsRequest,
     format_validation_error,
 )
@@ -62,7 +59,10 @@ logger = structlog.get_logger()
 
 # Log NLP availability after logger is defined
 if not NLP_AVAILABLE:
-    logger.warning("nlp_module_unavailable", reason="spacy not installed", impact="NLP features disabled")
+    logger.warning(
+        "nlp_module_unavailable",
+        reason="spacy not installed",
+        impact="NLP features disabled")
 
 
 class ThreatHuntingMCPServer:
@@ -155,8 +155,7 @@ class ThreatHuntingMCPServer:
                     'hearth': "Set HEARTH_PATH in .env to enable HEARTH community hunts",
                     'splunk': "Set SPLUNK_HOST, SPLUNK_PORT, SPLUNK_TOKEN in .env",
                     'nlp': "Install spacy: pip install spacy && python -m spacy download en_core_web_sm",
-                    'atlassian': "Set ATLASSIAN_URL, ATLASSIAN_USERNAME, ATLASSIAN_API_TOKEN in .env"
-                }
+                    'atlassian': "Set ATLASSIAN_URL, ATLASSIAN_USERNAME, ATLASSIAN_API_TOKEN in .env"}
                 if feature in config_hints:
                     logger.info(
                         "configuration_hint",
@@ -179,13 +178,16 @@ class ThreatHuntingMCPServer:
         recommendations = []
 
         if not feature_status.get('hearth', {}).get('available'):
-            recommendations.append("Enable HEARTH for community hunt access - set HEARTH_PATH in .env")
+            recommendations.append(
+                "Enable HEARTH for community hunt access - set HEARTH_PATH in .env")
 
         if not feature_status.get('splunk', {}).get('available'):
-            recommendations.append("Configure Splunk for data analysis - set SPLUNK_HOST, SPLUNK_PORT, SPLUNK_TOKEN")
+            recommendations.append(
+                "Configure Splunk for data analysis - set SPLUNK_HOST, SPLUNK_PORT, SPLUNK_TOKEN")
 
         if not feature_status.get('nlp', {}).get('available'):
-            recommendations.append("Install spacy for NLP features - pip install spacy && python -m spacy download en_core_web_sm")
+            recommendations.append(
+                "Install spacy for NLP features - pip install spacy && python -m spacy download en_core_web_sm")
 
         if len(recommendations) == 0:
             recommendations.append("All recommended features are enabled!")
@@ -235,9 +237,13 @@ class ThreatHuntingMCPServer:
                     # Add additional details per feature
                     if feature == 'hearth' and available:
                         try:
-                            hunt_count = len(self.hearth.repo._hunt_cache) if hasattr(self.hearth.repo, '_hunt_cache') else "unknown"
+                            hunt_count = len(
+                                self.hearth.repo._hunt_cache) if hasattr(
+                                self.hearth.repo, '_hunt_cache') else "unknown"
                             status["hunt_count"] = hunt_count
-                            status["path"] = str(self.hearth.repo.hearth_path) if hasattr(self.hearth.repo, 'hearth_path') else "unknown"
+                            status["path"] = str(
+                                self.hearth.repo.hearth_path) if hasattr(
+                                self.hearth.repo, 'hearth_path') else "unknown"
                         except Exception:
                             status["hunt_count"] = "error"
 
@@ -260,7 +266,8 @@ class ThreatHuntingMCPServer:
 
                     elif feature == 'atlassian' and not available:
                         status["reason"] = "not configured"
-                        status["config_required"] = ["ATLASSIAN_URL", "ATLASSIAN_USERNAME", "ATLASSIAN_API_TOKEN"]
+                        status["config_required"] = [
+                            "ATLASSIAN_URL", "ATLASSIAN_USERNAME", "ATLASSIAN_API_TOKEN"]
 
                     feature_status[feature] = status
 
@@ -321,8 +328,7 @@ class ThreatHuntingMCPServer:
                     "status": "feature_unavailable",
                     "error": "NLP features not available",
                     "help": "Install spacy: pip install spacy && python -m spacy download en_core_web_sm",
-                    "alternative": "Use PEAK framework tools directly (create_behavioral_hunt)"
-                }
+                    "alternative": "Use PEAK framework tools directly (create_behavioral_hunt)"}
 
             try:
                 # Process query through NLP
@@ -440,7 +446,12 @@ class ThreatHuntingMCPServer:
                 results = await self.splunk.execute_math_hunt(algorithm, data)
 
                 # Identify high-confidence anomalies
-                anomalies = [r for r in results.get("anomalies", []) if r.get("confidence", 0) > 0.8]
+                anomalies = [
+                    r for r in results.get(
+                        "anomalies",
+                        []) if r.get(
+                        "confidence",
+                        0) > 0.8]
 
                 # Create Jira tickets for top anomalies
                 tickets_created = []
@@ -760,7 +771,10 @@ class ThreatHuntingMCPServer:
                 try:
                     return await self.hearth.get_hunts_for_technique(technique_id)
                 except Exception as e:
-                    logger.error("Error getting hunts for technique", technique=technique_id, error=str(e))
+                    logger.error(
+                        "Error getting hunts for technique",
+                        technique=technique_id,
+                        error=str(e))
                     return {"error": str(e), "status": "failed"}
 
             @self.mcp.tool()
@@ -940,8 +954,7 @@ class ThreatHuntingMCPServer:
                 return {
                     "status": "feature_unavailable",
                     "error": "Atlassian integration not configured",
-                    "help": "Set ATLASSIAN_URL, ATLASSIAN_USERNAME, ATLASSIAN_API_TOKEN in .env file"
-                }
+                    "help": "Set ATLASSIAN_URL, ATLASSIAN_USERNAME, ATLASSIAN_API_TOKEN in .env file"}
 
             async def fetch_playbooks():
                 return await self.atlassian.get_hunting_playbooks(settings.confluence_space)
@@ -955,8 +968,7 @@ class ThreatHuntingMCPServer:
                 return {
                     "status": "feature_unavailable",
                     "error": "Atlassian integration not configured",
-                    "help": "Set ATLASSIAN_URL, ATLASSIAN_USERNAME, ATLASSIAN_API_TOKEN in .env file"
-                }
+                    "help": "Set ATLASSIAN_URL, ATLASSIAN_USERNAME, ATLASSIAN_API_TOKEN in .env file"}
 
             async def fetch_threat_intel():
                 return await self.atlassian.get_threat_intelligence()
@@ -1124,12 +1136,14 @@ Based on the scenario analysis, here's a structured hunting approach:
             else:
                 hypothesis = processed_query.get("hypothesis", "Detect suspicious activity")
                 adversary = entities.get("actors", ["unknown"])[0]
-                return self.framework.create_hypothesis_driven_hunt(hypothesis, adversary, "security_breach")
+                return self.framework.create_hypothesis_driven_hunt(
+                    hypothesis, adversary, "security_breach")
         else:
             # Default to hypothesis-driven for other frameworks
             hypothesis = processed_query.get("hypothesis", "Detect suspicious activity")
             adversary = entities.get("actors", ["unknown"])[0]
-            return self.framework.create_hypothesis_driven_hunt(hypothesis, adversary, "security_breach")
+            return self.framework.create_hypothesis_driven_hunt(
+                hypothesis, adversary, "security_breach")
 
     async def _execute_hunt(self, hunt: ThreatHunt) -> Dict:
         """Executes a hunt based on its type"""
@@ -1155,7 +1169,8 @@ Based on the scenario analysis, here's a structured hunting approach:
                 if isinstance(result, dict) and result.get("count", 0) > 0:
                     analysis["success"] = True
                     analysis["findings"].append(
-                        {"query": query, "matches": result["count"], "sample_data": result.get("data", [])[:5]}
+                        {"query": query, "matches": result["count"], "sample_data": result.get("data", [])[
+                            :5]}
                     )
 
         elif hunt.hunt_type == HuntType.BASELINE:
@@ -1199,9 +1214,14 @@ Based on the scenario analysis, here's a structured hunting approach:
                         "description": f"Detection based on hunt: {
                             hunt.hypothesis}",
                         "query": finding["query"],
-                        "threshold": max(1, finding.get("matches", 1) // 2),
+                        "threshold": max(
+                            1,
+                            finding.get(
+                                "matches",
+                                1) // 2),
                         "severity": self._assess_severity(finding),
-                        "mitre_techniques": [t["id"] for t in hunt.data_sources if t.startswith("T")],
+                        "mitre_techniques": [
+                            t["id"] for t in hunt.data_sources if t.startswith("T")],
                     }
 
                     # Deploy to Splunk

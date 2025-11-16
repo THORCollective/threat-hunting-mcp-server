@@ -144,7 +144,8 @@ class ThreatHuntingRelevancyFactors:
         hunt_tags = hunt.tags
 
         # Check for MITRE ATT&CK technique matches
-        technique_matches = sum(1 for tag in hunt_tags if tag.startswith("T") and tag in org_threats)
+        technique_matches = sum(
+            1 for tag in hunt_tags if tag.startswith("T") and tag in org_threats)
 
         if technique_matches > 0:
             return min(1.0, technique_matches * 0.3)
@@ -168,7 +169,8 @@ class ThreatHuntingRelevancyFactors:
         for surface in attack_surface:
             for component, keywords in surface_components.items():
                 if surface.lower() == component:
-                    if any(kw in hunt.title.lower() or kw in hunt.hypothesis.lower() for kw in keywords):
+                    if any(kw in hunt.title.lower() or kw in hunt.hypothesis.lower()
+                           for kw in keywords):
                         matches += 1
 
         return min(1.0, matches * 0.4)
@@ -395,7 +397,8 @@ class THORCollectiveIntegration:
         # Load community hunts
         self.community_hunts = self._load_hearth_hunts()
 
-        logger.info(f"THOR Collective integration initialized with {len(self.community_hunts)} HEARTH hunts")
+        logger.info(
+            f"THOR Collective integration initialized with {len(self.community_hunts)} HEARTH hunts")
 
     def get_relevant_hunts(self, filters: Optional[Dict] = None) -> List[Dict]:
         """
@@ -499,7 +502,12 @@ index=dns
                 peak_phase="Prepare",
                 contributor="thor_collective",
                 tags=["baseline", "dns", "beaconing", "c2", "T1071"],
-                relevancy_factors={"industries": ["all"], "regions": ["global"], "tech_stack": ["dns", "network"]},
+                relevancy_factors={
+                    "industries": ["all"],
+                    "regions": ["global"],
+                    "tech_stack": [
+                        "dns",
+                        "network"]},
             ),
             HEARTHHunt(
                 hunt_id="M-001",

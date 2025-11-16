@@ -278,7 +278,8 @@ class TaHiTIFramework:
 
     # ===== FINALIZE PHASE =====
 
-    def validate_hypothesis(self, hunt_id: str, validation_evidence: List[Dict], analyst_assessment: str) -> Dict:
+    def validate_hypothesis(
+            self, hunt_id: str, validation_evidence: List[Dict], analyst_assessment: str) -> Dict:
         """
         STEP 5: Validate hypothesis based on investigation results
 
@@ -298,7 +299,8 @@ class TaHiTIFramework:
             raise ValueError("Must complete investigation before validation")
 
         # Assess validation
-        validation_result = self._assess_hypothesis_validation(hunt.hypothesis, validation_evidence, analyst_assessment)
+        validation_result = self._assess_hypothesis_validation(
+            hunt.hypothesis, validation_evidence, analyst_assessment)
 
         hunt.validation_result = validation_result["validated"]
         hunt.findings = validation_result["key_findings"]
@@ -337,7 +339,8 @@ class TaHiTIFramework:
         # Create handover packages for each target process
         handover_packages = {}
         for process in target_processes:
-            handover_packages[process.value] = self._create_handover_package(hunt, process, recommendations)
+            handover_packages[process.value] = self._create_handover_package(
+                hunt, process, recommendations)
 
         # Move to completed hunts
         self.completed_hunts.append(hunt)
@@ -418,11 +421,13 @@ class TaHiTIFramework:
 
         # Basic query generation - enhanced with TI context
         if "lateral movement" in hypothesis.lower():
-            queries.append("index=windows EventCode=4624 Logon_Type=3 | stats count by src_ip, dest_ip")
+            queries.append(
+                "index=windows EventCode=4624 Logon_Type=3 | stats count by src_ip, dest_ip")
         if "credential" in hypothesis.lower():
             queries.append("index=endpoint process_name IN (lsass.exe, mimikatz.exe)")
         if "persistence" in hypothesis.lower():
-            queries.append("index=windows (EventCode=4698 OR EventCode=4699) | table TaskName, Author")
+            queries.append(
+                "index=windows (EventCode=4698 OR EventCode=4699) | table TaskName, Author")
 
         # Add intelligence-driven queries from TI
         for intel in hunt.threat_intelligence:
@@ -442,7 +447,8 @@ class TaHiTIFramework:
 
         return findings
 
-    def _enrich_with_intelligence(self, findings: List[Dict], intelligence: List[Dict]) -> List[Dict]:
+    def _enrich_with_intelligence(
+            self, findings: List[Dict], intelligence: List[Dict]) -> List[Dict]:
         """Enrich findings with contextual threat intelligence"""
         enriched = []
 
@@ -464,7 +470,8 @@ class TaHiTIFramework:
         # Simple matching - can be enhanced with ML
         return True  # Placeholder
 
-    def _assess_hypothesis_validation(self, hypothesis: str, evidence: List[Dict], assessment: str) -> Dict:
+    def _assess_hypothesis_validation(
+            self, hypothesis: str, evidence: List[Dict], assessment: str) -> Dict:
         """Assess whether hypothesis was validated"""
         validated = "confirmed" in assessment.lower() or "validated" in assessment.lower()
 
@@ -484,7 +491,8 @@ class TaHiTIFramework:
         # More evidence = higher confidence
         return min(len(evidence) * 0.2, 1.0)
 
-    def _create_handover_package(self, hunt: TaHiTIHunt, process: HandoverProcess, recommendations: List[Dict]) -> Dict:
+    def _create_handover_package(self, hunt: TaHiTIHunt,
+                                 process: HandoverProcess, recommendations: List[Dict]) -> Dict:
         """Create handover package for target process"""
         package = {
             "hunt_id": hunt.hunt_id,

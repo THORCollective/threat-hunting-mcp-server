@@ -3,7 +3,6 @@ Tests for HEARTH integration and token optimization
 """
 
 import pytest
-from pathlib import Path
 
 
 class TestHEARTHHuntSummaryMode:

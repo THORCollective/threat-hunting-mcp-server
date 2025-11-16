@@ -286,7 +286,8 @@ class DeceptionManager:
 
             if dest_ip in decoy_ips:
                 # Find which decoy was accessed
-                decoy = next((d for d in self.decoy_systems.values() if d.ip_address == dest_ip), None)
+                decoy = next((d for d in self.decoy_systems.values()
+                             if d.ip_address == dest_ip), None)
 
                 if decoy:
                     interaction = {

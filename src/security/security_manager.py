@@ -95,7 +95,8 @@ class SecurityManager:
                 user_key = f"{self.get_current_user()}:{key}"
                 if not await self.rate_limiter.check_rate_limit(user_key, max_requests, window_seconds):
                     await self.audit_log(
-                        "rate_limit_exceeded", self.get_current_user(), {"key": key, "limit": max_requests}, "WARNING"
+                        "rate_limit_exceeded", self.get_current_user(
+                        ), {"key": key, "limit": max_requests}, "WARNING"
                     )
                     raise ValueError("Rate limit exceeded")
                 return await func(*args, **kwargs)
@@ -168,7 +169,10 @@ class SecurityManager:
             dangerous_chars = [";", "|eval", "|delete", "|drop", "rm -rf"]
             for char in dangerous_chars:
                 if char in input_data.lower():
-                    logger.warning("Potentially dangerous input detected", input=input_data, char=char)
+                    logger.warning(
+                        "Potentially dangerous input detected",
+                        input=input_data,
+                        char=char)
                     input_data = input_data.replace(char, "")
 
             # Limit input length
@@ -184,7 +188,14 @@ class SecurityManager:
 
     def validate_splunk_query(self, query: str) -> bool:
         """Validates Splunk queries for security"""
-        dangerous_commands = ["delete", "drop", "outputcsv", "outputlookup", "script", "sendemail", "rest"]
+        dangerous_commands = [
+            "delete",
+            "drop",
+            "outputcsv",
+            "outputlookup",
+            "script",
+            "sendemail",
+            "rest"]
 
         query_lower = query.lower()
         for cmd in dangerous_commands:
@@ -259,7 +270,9 @@ class AuditLogger:
 
     def __init__(self, config: Dict):
         self.log_file = config.get("log_file", "/tmp/threat_hunting_mcp_audit.log")
-        self.security_log_file = config.get("security_log_file", "/tmp/threat_hunting_mcp_security.log")
+        self.security_log_file = config.get(
+            "security_log_file",
+            "/tmp/threat_hunting_mcp_security.log")
         self.siem_enabled = config.get("siem_enabled", False)
         self.siem_endpoint = config.get("siem_endpoint")
 

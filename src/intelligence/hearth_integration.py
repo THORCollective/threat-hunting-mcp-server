@@ -64,7 +64,8 @@ class HEARTHHunt:
 
         if summary:
             # Summary mode: truncate long fields
-            base["notes_preview"] = self.notes[:100] + "..." if len(self.notes) > 100 else self.notes
+            base["notes_preview"] = self.notes[:100] + \
+                "..." if len(self.notes) > 100 else self.notes
             base["has_details"] = bool(self.why_section or self.next_steps or self.references)
         else:
             # Full mode: include everything
@@ -400,7 +401,13 @@ class HEARTHRepository:
         Returns:
             Dictionary with statistics
         """
-        stats = {"total_hunts": 0, "flames": 0, "embers": 0, "alchemy": 0, "tactics": set(), "unique_submitters": set()}
+        stats = {
+            "total_hunts": 0,
+            "flames": 0,
+            "embers": 0,
+            "alchemy": 0,
+            "tactics": set(),
+            "unique_submitters": set()}
 
         for directory, h_type in [
             (self.flames_dir, HuntType.FLAME),

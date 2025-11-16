@@ -47,7 +47,8 @@ class AtlassianThreatIntel:
             logger.error(f"Error retrieving hunting playbooks: {str(e)}")
             return []
 
-    async def create_hunt_ticket(self, hunt: ThreatHunt, project_key: str = "HUNT") -> Optional[str]:
+    async def create_hunt_ticket(self, hunt: ThreatHunt,
+                                 project_key: str = "HUNT") -> Optional[str]:
         """Creates a Jira ticket for tracking a threat hunt"""
         try:
             issue_dict = {
@@ -95,14 +96,16 @@ class AtlassianThreatIntel:
             logger.error(f"Error updating hunt ticket: {str(e)}")
             return False
 
-    async def create_detection_page(self, detection: Dict, space: str = "THREATHUNT") -> Optional[str]:
+    async def create_detection_page(self, detection: Dict,
+                                    space: str = "THREATHUNT") -> Optional[str]:
         """Creates a Confluence page for a new detection rule"""
         try:
             page_title = f"Detection: {detection['name']}"
             page_content = self._format_detection_page_content(detection)
 
             new_page = self.confluence.create_page(
-                space=space, title=page_title, body=page_content, labels=["detection-rule", "automated"]
+                space=space, title=page_title, body=page_content, labels=[
+                    "detection-rule", "automated"]
             )
 
             page_url = f"{
@@ -185,7 +188,11 @@ class AtlassianThreatIntel:
         """Extracts threat actor names from content"""
         html_content = content["body"]["storage"]["value"]
         # Common threat actor naming patterns
-        actor_patterns = [r"\bAPT\d+\b", r"\bFIN\d+\b", r"\bTA\d+\b", r"\bG\d{4}\b"]  # MITRE group IDs
+        actor_patterns = [
+            r"\bAPT\d+\b",
+            r"\bFIN\d+\b",
+            r"\bTA\d+\b",
+            r"\bG\d{4}\b"]  # MITRE group IDs
 
         actors = []
         for pattern in actor_patterns:

@@ -384,7 +384,8 @@ class ThreatIntelligenceEngine:
                 ]
             )
 
-        suggestions.append("⭐ BEST PRACTICE: Always pivot from IOCs to behavioral patterns for durable detection")
+        suggestions.append(
+            "⭐ BEST PRACTICE: Always pivot from IOCs to behavioral patterns for durable detection")
 
         return suggestions
 
@@ -408,7 +409,8 @@ class ThreatIntelligenceEngine:
                     "name": "Initial Access",
                     "description": "The adversary is trying to get into your network.",
                 },
-                {"id": "TA0002", "name": "Execution", "description": "The adversary is trying to run malicious code."},
+                {"id": "TA0002", "name": "Execution",
+                    "description": "The adversary is trying to run malicious code."},
                 {
                     "id": "TA0003",
                     "name": "Persistence",
@@ -449,7 +451,8 @@ class ThreatIntelligenceEngine:
                     "name": "Command and Control",
                     "description": "The adversary is trying to communicate with compromised systems.",
                 },
-                {"id": "TA0010", "name": "Exfiltration", "description": "The adversary is trying to steal data."},
+                {"id": "TA0010", "name": "Exfiltration",
+                    "description": "The adversary is trying to steal data."},
                 {
                     "id": "TA0040",
                     "name": "Impact",
@@ -618,7 +621,8 @@ class ThreatIntelligenceEngine:
     def _is_high_priority(self, technique: Dict) -> bool:
         """Determines if a technique is high priority for hunting"""
         high_priority_tactics = ["credential access", "lateral movement", "persistence"]
-        return any(tactic in technique.get("tactic", "").lower() for tactic in high_priority_tactics)
+        return any(tactic in technique.get("tactic", "").lower()
+                   for tactic in high_priority_tactics)
 
     def _map_data_sources_to_telemetry(self, data_sources: List[str]) -> Dict:
         """Maps MITRE data sources to telemetry requirements"""

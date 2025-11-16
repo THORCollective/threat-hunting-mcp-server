@@ -186,7 +186,8 @@ class GraphCorrelationEngine:
 
         return suspicious_patterns
 
-    async def find_critical_paths(self, graph: AttackGraph, pivot_points: List[str]) -> List[AttackPath]:
+    async def find_critical_paths(self, graph: AttackGraph,
+                                  pivot_points: List[str]) -> List[AttackPath]:
         """Identifies critical attack paths through the graph"""
         critical_paths = []
 
@@ -339,7 +340,14 @@ class GraphCorrelationEngine:
 
         # PowerShell obfuscation indicators
         if "powershell" in process_name:
-            suspicious_patterns = ["-enc", "-w hidden", "-nop", "downloadstring", "invoke-expression", "iex", "bypass"]
+            suspicious_patterns = [
+                "-enc",
+                "-w hidden",
+                "-nop",
+                "downloadstring",
+                "invoke-expression",
+                "iex",
+                "bypass"]
             return any(pattern in cmdline for pattern in suspicious_patterns)
 
         # WMIC suspicious usage
@@ -380,7 +388,8 @@ class GraphCorrelationEngine:
         for i in range(len(path_ids) - 1):
             source = path_ids[i]
             target = path_ids[i + 1]
-            matching_edges = [e for e in graph.edges if e.source_id == source and e.target_id == target]
+            matching_edges = [e for e in graph.edges if e.source_id ==
+                              source and e.target_id == target]
             edges.extend(matching_edges)
 
         # Map to kill chain stages
@@ -411,7 +420,7 @@ class GraphCorrelationEngine:
         # For each pair of nodes, find shortest paths
         node_ids = list(graph.nodes.keys())
         for i, start in enumerate(node_ids):
-            for end in node_ids[i + 1 :]:
+            for end in node_ids[i + 1:]:
                 paths = graph.find_paths(start, end, max_depth=5)
 
                 # Count how many times each node appears in paths
@@ -421,7 +430,8 @@ class GraphCorrelationEngine:
 
         return dict(centrality)
 
-    def _map_to_kill_chain(self, nodes: List[EntityNode], edges: List[RelationshipEdge]) -> List[str]:
+    def _map_to_kill_chain(self, nodes: List[EntityNode],
+                           edges: List[RelationshipEdge]) -> List[str]:
         """Maps attack path to cyber kill chain stages"""
         stages = []
 
@@ -438,7 +448,8 @@ class GraphCorrelationEngine:
 
         return list(set(stages))
 
-    def _extract_ttps_from_path(self, nodes: List[EntityNode], edges: List[RelationshipEdge]) -> List[str]:
+    def _extract_ttps_from_path(
+            self, nodes: List[EntityNode], edges: List[RelationshipEdge]) -> List[str]:
         """Extracts MITRE ATT&CK TTPs from attack path"""
         ttps = []
 
@@ -451,7 +462,8 @@ class GraphCorrelationEngine:
 
         return list(set(ttps))
 
-    def _calculate_path_confidence(self, nodes: List[EntityNode], edges: List[RelationshipEdge]) -> float:
+    def _calculate_path_confidence(
+            self, nodes: List[EntityNode], edges: List[RelationshipEdge]) -> float:
         """Calculates confidence in attack path"""
         if not nodes:
             return 0.0

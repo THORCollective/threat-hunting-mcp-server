@@ -93,14 +93,18 @@ def validate_non_empty_string(value: str, field_name: str = "field") -> str:
 class CreateBehavioralHuntRequest(BaseModel):
     """Validation for create_behavioral_hunt tool"""
     technique_id: str = Field(..., description="MITRE ATT&CK technique ID (e.g., T1003.001)")
-    technique_name: str = Field(..., min_length=1, max_length=200, description="Name of the technique")
+    technique_name: str = Field(..., min_length=1, max_length=200,
+                                description="Name of the technique")
     tactic: str = Field(..., description="MITRE ATT&CK tactic")
-    hypothesis: str = Field(..., min_length=10, max_length=2000, description="Hunt hypothesis statement")
-    hunter_name: str = Field(..., min_length=1, max_length=100, description="Name of the threat hunter")
+    hypothesis: str = Field(..., min_length=10, max_length=2000,
+                            description="Hunt hypothesis statement")
+    hunter_name: str = Field(..., min_length=1, max_length=100,
+                             description="Name of the threat hunter")
     location: str = Field(..., min_length=1, max_length=200, description="Where to hunt")
     data_sources: List[dict] = Field(..., min_items=1, description="List of data sources")
     actor: Optional[str] = Field(None, max_length=100, description="Optional threat actor")
-    threat_intel_sources: Optional[List[str]] = Field(None, description="Optional threat intel sources")
+    threat_intel_sources: Optional[List[str]] = Field(
+        None, description="Optional threat intel sources")
     related_tickets: Optional[dict] = Field(None, description="Optional related tickets")
 
     @field_validator('technique_id')
@@ -248,7 +252,8 @@ class EnrichIOCRequest(BaseModel):
 
 class CreateBaselineRequest(BaseModel):
     """Validation for create_baseline tool"""
-    environment: str = Field(..., min_length=1, max_length=100, description="Environment to baseline")
+    environment: str = Field(..., min_length=1, max_length=100,
+                             description="Environment to baseline")
     metrics: List[str] = Field(..., min_items=1, max_items=50, description="Metrics to baseline")
 
     @field_validator('environment')
@@ -267,7 +272,8 @@ class CreateBaselineRequest(BaseModel):
 
 class AnalyzeWithMLRequest(BaseModel):
     """Validation for analyze_with_ml tool"""
-    data_source: str = Field(..., min_length=1, max_length=200, description="Data source to analyze")
+    data_source: str = Field(..., min_length=1, max_length=200,
+                             description="Data source to analyze")
     algorithm: str = Field("isolation_forest", description="ML algorithm to use")
 
     @field_validator('algorithm')
@@ -323,9 +329,11 @@ def format_validation_error(error) -> dict:
         if 'String should match pattern' in message:
             message = "Invalid format - see examples for correct format"
         elif 'Input should be less than or equal to' in message:
-            message = f"Value too large - {message.split('<=')[1].strip() if '<=' in message else 'maximum exceeded'}"
+            message = f"Value too large - {
+                message.split('<=')[1].strip() if '<=' in message else 'maximum exceeded'}"
         elif 'Input should be greater than or equal to' in message:
-            message = f"Value too small - {message.split('>=')[1].strip() if '>=' in message else 'minimum not met'}"
+            message = f"Value too small - {
+                message.split('>=')[1].strip() if '>=' in message else 'minimum not met'}"
 
         errors.append({
             "field": field,

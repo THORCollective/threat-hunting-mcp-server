@@ -19,7 +19,11 @@ class SplunkHuntingEngine:
     """Executes threat hunting queries in Splunk"""
 
     def __init__(self, host: str, port: int, splunk_token: str):
-        self.service = client.connect(host=host, port=port, splunkToken=splunk_token, autologin=True)
+        self.service = client.connect(
+            host=host,
+            port=port,
+            splunkToken=splunk_token,
+            autologin=True)
         self.hunt_queries = self._load_hunt_queries()
 
     async def execute_hypothesis_hunt(self, hunt: ThreatHunt) -> Dict:

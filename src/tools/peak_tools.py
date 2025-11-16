@@ -85,7 +85,8 @@ class PEAKTools:
             )
 
             # Generate the report
-            output_path = self.hunts_directory / f"{hunt.hunt_id}_{technique_id.replace('.', '_')}.md"
+            output_path = self.hunts_directory / \
+                f"{hunt.hunt_id}_{technique_id.replace('.', '_')}.md"
             report = self.generator.generate_hunt_report(hunt, output_path)
 
             return {

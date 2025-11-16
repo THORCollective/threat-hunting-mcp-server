@@ -3,7 +3,6 @@ Tests for server health check functionality
 """
 
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
 
 
 class TestGetServerHealth:
@@ -132,22 +131,26 @@ class TestFeatureAvailability:
     def test_hearth_feature_check(self):
         """Test HEARTH feature availability logic"""
         # Feature is available if hearth path is set
-        hearth_available = "/path/to/hearth" is not None
+        hearth_path = "/path/to/hearth"
+        hearth_available = hearth_path is not None
         assert hearth_available is True
 
         # Feature is unavailable if path is None
-        hearth_available = None is not None
+        hearth_path = None
+        hearth_available = hearth_path is not None
         assert hearth_available is False
 
     @pytest.mark.unit
     def test_splunk_feature_check(self):
         """Test Splunk feature availability logic"""
         # Feature is available if splunk host is set
-        splunk_available = "splunk.example.com" is not None
+        splunk_host = "splunk.example.com"
+        splunk_available = splunk_host is not None
         assert splunk_available is True
 
         # Feature is unavailable if host is None
-        splunk_available = None is not None
+        splunk_host = None
+        splunk_available = splunk_host is not None
         assert splunk_available is False
 
     @pytest.mark.unit

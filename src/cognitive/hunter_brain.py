@@ -86,7 +86,8 @@ class ThreatHunterCognition:
             "ttps": 1.0,
         }
 
-    async def generate_competing_hypotheses(self, initial_hypothesis: str, context: Dict) -> List[Hypothesis]:
+    async def generate_competing_hypotheses(
+            self, initial_hypothesis: str, context: Dict) -> List[Hypothesis]:
         """
         Forces consideration of alternative explanations using
         Analysis of Competing Hypotheses (ACH)
@@ -151,7 +152,8 @@ class ThreatHunterCognition:
         confidence_factors["absence_factor"] = absence_factor
 
         # Calculate final confidence
-        final_confidence = self._calculate_final_confidence(weighted_score, absence_factor, has_confirmation_bias)
+        final_confidence = self._calculate_final_confidence(
+            weighted_score, absence_factor, has_confirmation_bias)
         confidence_factors["final_confidence"] = final_confidence
 
         return confidence_factors
@@ -221,7 +223,8 @@ class ThreatHunterCognition:
         return f"Supply chain compromise: Trusted third-party software or vendor access being abused for {
             hypothesis.lower()}"
 
-    def _rank_hypotheses_by_evidence(self, hypotheses: List[Hypothesis], context: Dict) -> List[Hypothesis]:
+    def _rank_hypotheses_by_evidence(
+            self, hypotheses: List[Hypothesis], context: Dict) -> List[Hypothesis]:
         """Ranks hypotheses based on available evidence"""
         # In production, this would use actual evidence matching
         # For now, return sorted by initial confidence

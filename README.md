@@ -693,26 +693,9 @@ The MCP server reads from your local HEARTH repository. To contribute new hunts:
 
 ## Security
 
-### Authentication
-- JWT token-based authentication
-- Role-based access control (RBAC)
-- Token binding support
+Enterprise-grade security features including JWT authentication, AES encryption, comprehensive audit logging, and rate limiting. See **[SECURITY.md](SECURITY.md)** for complete security documentation, hardening guidelines, and responsible disclosure policy.
 
-### Data Protection
-- AES encryption for sensitive data
-- Secure credential storage
-- Input sanitization and validation
-
-### Audit Logging
-- Comprehensive activity logging
-- Structured JSON format
-- Security event monitoring
-- SIEM integration ready
-
-### Rate Limiting
-- Redis-based sliding window
-- Per-user and per-endpoint limits
-- Configurable thresholds
+**Key Features:** JWT auth • AES encryption • Audit logging • Rate limiting • Input validation • SIEM integration
 
 ## Contributing
 

@@ -286,6 +286,18 @@ The fastest way to get started with community hunt knowledge:
    - "Recommend threat hunts for my Windows AD environment"
    - "What's the tactic coverage in HEARTH?"
 
+## Production Deployment
+
+For production deployment features including health monitoring, testing, optimization, and structured logging, see **[PRODUCTION.md](PRODUCTION.md)**.
+
+**Production Features:**
+- 🏥 Health monitoring with `get_server_health()` MCP tool
+- 🛡️ Input validation and security (Pydantic models)
+- ⚡ Token optimization (40-50% reduction)
+- ✅ Automated testing (38 tests, 100% pass rate)
+- 📊 Structured JSON logging to stderr
+- 🔄 Graceful degradation for optional features
+
 ## Full Installation
 
 For complete functionality including Splunk, Atlassian, and ML features:

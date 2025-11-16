@@ -1,8 +1,11 @@
+import logging
+import sys
 from datetime import datetime
 from typing import Dict, List, Optional
 
 import structlog
 from mcp.server.fastmcp import FastMCP
+from pydantic import ValidationError
 
 from .config import settings
 from .frameworks.hunt_framework import ThreatHuntingFramework
@@ -15,42 +18,51 @@ try:
 except ImportError:
     NLP_AVAILABLE = False
 from .models.hunt import HuntType, ThreatHunt
+from .models.validators import (
+    AnalyzeAdversaryRequest,
+    CreateBaselineRequest,
+    EnrichIOCRequest,
+    ExecuteCustomQueryRequest,
+    GetHuntsForTacticRequest,
+    GetHuntsForTechniqueRequest,
+    SearchCommunityHuntsRequest,
+    format_validation_error,
+)
 from .security.security_manager import CacheManager, SecurityManager
 from .tools.hearth_tools import HEARTHTools
 from .tools.peak_tools import PEAKTools
 
-# # Configure logging - write to file instead of stdout to avoid interfering with MCP stdio protocol
-# import sys
-# structlog.configure(
-#     processors=[
-#         structlog.stdlib.filter_by_level,
-#         structlog.stdlib.add_logger_name,
-#         structlog.stdlib.add_log_level,
-#         structlog.stdlib.PositionalArgumentsFormatter(),
-#         structlog.processors.TimeStamper(fmt="iso"),
-#         structlog.processors.StackInfoRenderer(),
-#         structlog.processors.format_exc_info,
-#         structlog.processors.UnicodeDecoder(),
-#         structlog.processors.JSONRenderer()
-#     ],
-#     context_class=dict,
-#     logger_factory=structlog.stdlib.LoggerFactory(),
-#     wrapper_class=structlog.stdlib.BoundLogger,
-#     cache_logger_on_first_use=True,
-# )
+# Configure structured logging - write to stderr to avoid interfering with MCP stdio protocol
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.processors.JSONRenderer()
+    ],
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
 
-# # Redirect all logs to stderr to keep stdout clean for MCP JSON-RPC protocol
-# logging.basicConfig(
-#     stream=sys.stderr,
-#     level=logging.INFO,
-#     format='%(message)s'
-# )
+# Redirect all logs to stderr to keep stdout clean for MCP JSON-RPC protocol
+logging.basicConfig(
+    stream=sys.stderr,
+    level=logging.INFO,
+    format='%(message)s'
+)
 
 logger = structlog.get_logger()
 
-# # Log NLP availability after logger is defined
-# if not NLP_AVAILABLE:
-#     logger.warning("NLP module not available - spacy not installed. NLP features will be disabled.")
+# Log NLP availability after logger is defined
+if not NLP_AVAILABLE:
+    logger.warning("nlp_module_unavailable", reason="spacy not installed", impact="NLP features disabled")
 
 
 class ThreatHuntingMCPServer:
@@ -105,6 +117,19 @@ class ThreatHuntingMCPServer:
         self.security = SecurityManager(security_config)
         self.cache = CacheManager(security_config["redis"])
 
+        # Track feature availability for graceful degradation
+        self.features = {
+            'hearth': self.hearth is not None,
+            'splunk': self.splunk is not None,
+            'nlp': self.nlp is not None,
+            'atlassian': self.atlassian is not None,
+            'peak': True,  # Always available
+            'threat_intel': True,  # Always available
+        }
+
+        # Validate configuration and log feature availability
+        self._validate_config()
+
         # Register MCP tools, resources, and prompts
         self._register_tools()
         self._register_resources()
@@ -112,12 +137,172 @@ class ThreatHuntingMCPServer:
 
         # logger.info("ThreatHuntingMCPServer initialized successfully")
 
+    def _validate_config(self):
+        """Validate configuration and log feature availability using structured logging"""
+        logger.info("server_startup", event="feature_availability_check")
+
+        for feature, available in self.features.items():
+            logger.info(
+                "feature_status",
+                feature=feature,
+                available=available,
+                status="enabled" if available else "disabled"
+            )
+
+            # Log configuration hints for disabled features
+            if not available:
+                config_hints = {
+                    'hearth': "Set HEARTH_PATH in .env to enable HEARTH community hunts",
+                    'splunk': "Set SPLUNK_HOST, SPLUNK_PORT, SPLUNK_TOKEN in .env",
+                    'nlp': "Install spacy: pip install spacy && python -m spacy download en_core_web_sm",
+                    'atlassian': "Set ATLASSIAN_URL, ATLASSIAN_USERNAME, ATLASSIAN_API_TOKEN in .env"
+                }
+                if feature in config_hints:
+                    logger.info(
+                        "configuration_hint",
+                        feature=feature,
+                        hint=config_hints[feature]
+                    )
+
+        # Count available features
+        available_count = sum(1 for v in self.features.values() if v)
+        total_count = len(self.features)
+        logger.info(
+            "feature_summary",
+            available=available_count,
+            total=total_count,
+            percentage=round((available_count / total_count) * 100, 1)
+        )
+
+    def _get_health_recommendations(self, feature_status: Dict) -> List[str]:
+        """Generate recommendations based on feature availability"""
+        recommendations = []
+
+        if not feature_status.get('hearth', {}).get('available'):
+            recommendations.append("Enable HEARTH for community hunt access - set HEARTH_PATH in .env")
+
+        if not feature_status.get('splunk', {}).get('available'):
+            recommendations.append("Configure Splunk for data analysis - set SPLUNK_HOST, SPLUNK_PORT, SPLUNK_TOKEN")
+
+        if not feature_status.get('nlp', {}).get('available'):
+            recommendations.append("Install spacy for NLP features - pip install spacy && python -m spacy download en_core_web_sm")
+
+        if len(recommendations) == 0:
+            recommendations.append("All recommended features are enabled!")
+
+        return recommendations
+
     def _register_tools(self):
         """Registers all MCP tools"""
 
         @self.mcp.tool()
-        @self.security.rate_limit("hunt_threats", max_requests=50, window_seconds=3600)
-        @self.security.require_permission("hunt:execute")
+        async def get_server_health() -> Dict:
+            """
+            Check server health and feature availability
+
+            Returns comprehensive diagnostic information about the server,
+            including which features are enabled, configuration status,
+            and resource counts.
+
+            Returns:
+                Dictionary with server health information
+
+            Example output:
+                {
+                    "status": "healthy",
+                    "version": "1.0.0",
+                    "features": {...},
+                    "resources": {...}
+                }
+            """
+            try:
+                # Check Redis connectivity
+                redis_available = False
+                try:
+                    if self.cache.redis_pool:
+                        redis_available = True
+                except Exception:
+                    redis_available = False
+
+                # Build feature status
+                feature_status = {}
+                for feature, available in self.features.items():
+                    status = {
+                        "available": available,
+                        "status": "enabled" if available else "disabled"
+                    }
+
+                    # Add additional details per feature
+                    if feature == 'hearth' and available:
+                        try:
+                            hunt_count = len(self.hearth.repo._hunt_cache) if hasattr(self.hearth.repo, '_hunt_cache') else "unknown"
+                            status["hunt_count"] = hunt_count
+                            status["path"] = str(self.hearth.repo.hearth_path) if hasattr(self.hearth.repo, 'hearth_path') else "unknown"
+                        except Exception:
+                            status["hunt_count"] = "error"
+
+                    elif feature == 'peak' and available:
+                        try:
+                            hunts_dir = self.peak.hunts_directory
+                            hunt_files = list(hunts_dir.glob("*.md")) if hunts_dir.exists() else []
+                            status["hunts_directory"] = str(hunts_dir)
+                            status["hunt_count"] = len(hunt_files)
+                        except Exception:
+                            status["hunt_count"] = "error"
+
+                    elif feature == 'nlp' and not available:
+                        status["reason"] = "spacy not installed"
+                        status["install_command"] = "pip install spacy && python -m spacy download en_core_web_sm"
+
+                    elif feature == 'splunk' and not available:
+                        status["reason"] = "not configured"
+                        status["config_required"] = ["SPLUNK_HOST", "SPLUNK_PORT", "SPLUNK_TOKEN"]
+
+                    elif feature == 'atlassian' and not available:
+                        status["reason"] = "not configured"
+                        status["config_required"] = ["ATLASSIAN_URL", "ATLASSIAN_USERNAME", "ATLASSIAN_API_TOKEN"]
+
+                    feature_status[feature] = status
+
+                # Calculate overall health
+                available_count = sum(1 for v in self.features.values() if v)
+                total_count = len(self.features)
+                health_percentage = (available_count / total_count) * 100 if total_count > 0 else 0
+
+                overall_status = "healthy" if health_percentage >= 50 else "degraded"
+                if health_percentage < 30:
+                    overall_status = "minimal"
+
+                return {
+                    "status": overall_status,
+                    "version": "1.0.0",
+                    "server_name": settings.server_name,
+                    "features": {
+                        "summary": {
+                            "available": available_count,
+                            "total": total_count,
+                            "percentage": round(health_percentage, 1)
+                        },
+                        "details": feature_status
+                    },
+                    "dependencies": {
+                        "redis": {
+                            "available": redis_available,
+                            "status": "connected" if redis_available else "not configured"
+                        }
+                    },
+                    "recommendations": self._get_health_recommendations(feature_status)
+                }
+
+            except Exception as e:
+                logger.error("Error in health check", error=str(e))
+                return {
+                    "status": "error",
+                    "error": str(e),
+                    "message": "Health check failed - see server logs for details"
+                }
+
+        @self.mcp.tool()
         async def hunt_threats(query: str, framework: str = "PEAK") -> Dict:
             """Natural language threat hunting interface
 
@@ -128,13 +313,18 @@ class ThreatHuntingMCPServer:
             Returns:
                 Dictionary containing hunt results and analysis
             """
-            user = self.security.get_current_user()
-            await self.security.audit_log("hunt_threats", user, {"query": query, "framework": framework})
+            # Note: MCP tools don't have HTTP request context, so no authentication/audit logging
+
+            # Check feature availability
+            if not self.features['nlp']:
+                return {
+                    "status": "feature_unavailable",
+                    "error": "NLP features not available",
+                    "help": "Install spacy: pip install spacy && python -m spacy download en_core_web_sm",
+                    "alternative": "Use PEAK framework tools directly (create_behavioral_hunt)"
+                }
 
             try:
-                # Sanitize input
-                query = self.security.sanitize_input(query)
-
                 # Process query through NLP
                 processed = await self.nlp.process_hunt_query(query)
 
@@ -165,12 +355,10 @@ class ThreatHuntingMCPServer:
                 }
 
             except Exception as e:
-                logger.error("Error in hunt_threats", error=str(e), user=user)
-                await self.security.audit_log("hunt_threats_error", user, {"query": query, "error": str(e)}, "ERROR")
+                logger.error("Error in hunt_threats", error=str(e))
                 return {"error": str(e), "status": "failed"}
 
         @self.mcp.tool()
-        @self.security.require_permission("hunt:create")
         async def create_baseline(environment: str, metrics: List[str]) -> Dict:
             """Creates baselines for normal behavior (PEAK Baseline Hunt)
 
@@ -181,8 +369,14 @@ class ThreatHuntingMCPServer:
             Returns:
                 Dictionary containing baseline statistics
             """
-            user = self.security.get_current_user()
-            await self.security.audit_log("create_baseline", user, {"environment": environment, "metrics": metrics})
+            # Check feature availability
+            if not self.features['splunk']:
+                return {
+                    "status": "feature_unavailable",
+                    "error": "Splunk integration not configured",
+                    "help": "Set SPLUNK_HOST, SPLUNK_PORT, SPLUNK_TOKEN in .env file",
+                    "feature": "splunk"
+                }
 
             try:
                 baselines = {}
@@ -213,7 +407,6 @@ class ThreatHuntingMCPServer:
                 return {"error": str(e), "status": "failed"}
 
         @self.mcp.tool()
-        @self.security.require_permission("hunt:execute")
         async def analyze_with_ml(data_source: str, algorithm: str = "isolation_forest") -> Dict:
             """Model-Assisted Threat Hunting (M-ATH) from PEAK framework
 
@@ -224,8 +417,14 @@ class ThreatHuntingMCPServer:
             Returns:
                 Dictionary containing anomaly detection results
             """
-            user = self.security.get_current_user()
-            await self.security.audit_log("analyze_with_ml", user, {"data_source": data_source, "algorithm": algorithm})
+            # Check feature availability
+            if not self.features['splunk']:
+                return {
+                    "status": "feature_unavailable",
+                    "error": "Splunk integration not configured",
+                    "help": "Set SPLUNK_HOST, SPLUNK_PORT, SPLUNK_TOKEN in .env file",
+                    "feature": "splunk"
+                }
 
             try:
                 # Retrieve data
@@ -265,27 +464,37 @@ class ThreatHuntingMCPServer:
                 return {"error": str(e), "status": "failed"}
 
         @self.mcp.tool()
-        @self.security.require_permission("query:splunk")
         async def execute_custom_query(query: str, index: str = "*") -> Dict:
             """Executes a custom Splunk query with security validation
 
             Args:
-                query: SPL query to execute
-                index: Splunk index to search (default: *)
+                query: SPL query to execute (read-only queries only)
+                index: Splunk index to search (default: *, format: alphanumeric with - _ *)
 
             Returns:
                 Dictionary containing query results
+
+            Example:
+                query="sourcetype=sysmon EventCode=1", index="security"
             """
-            user = self.security.get_current_user()
+            # Validate inputs
+            try:
+                request = ExecuteCustomQueryRequest(query=query, index=index)
+            except ValidationError as e:
+                return format_validation_error(e)
 
-            # Validate query for security
-            if not self.security.validate_splunk_query(query):
-                await self.security.audit_log("dangerous_query_blocked", user, {"query": query}, "WARNING")
-                return {"error": "Query blocked for security reasons", "status": "blocked"}
-
-            await self.security.audit_log("execute_custom_query", user, {"query": query, "index": index})
+            # Check feature availability
+            if not self.features['splunk']:
+                return {
+                    "status": "feature_unavailable",
+                    "error": "Splunk integration not configured",
+                    "help": "Set SPLUNK_HOST, SPLUNK_PORT, SPLUNK_TOKEN in .env file",
+                    "feature": "splunk"
+                }
 
             try:
+                query = request.query
+                index = request.index
                 # Add index prefix if not present
                 if not query.strip().startswith("index="):
                     query = f"index={index} {query}"
@@ -311,20 +520,26 @@ class ThreatHuntingMCPServer:
                 return {"error": str(e), "status": "failed"}
 
         @self.mcp.tool()
-        @self.security.require_permission("intel:analyze")
         async def analyze_adversary(adversary_id: str) -> Dict:
             """Analyzes a threat actor using multiple intelligence frameworks
 
             Args:
-                adversary_id: MITRE ATT&CK Group ID (e.g., G0016)
+                adversary_id: MITRE ATT&CK Group ID (format: G#### e.g., G0016)
 
             Returns:
                 Dictionary containing comprehensive adversary analysis
+
+            Example:
+                adversary_id="G0016" (APT29/Cozy Bear)
             """
-            user = self.security.get_current_user()
-            await self.security.audit_log("analyze_adversary", user, {"adversary_id": adversary_id})
+            # Validate inputs
+            try:
+                request = AnalyzeAdversaryRequest(adversary_id=adversary_id)
+            except ValidationError as e:
+                return format_validation_error(e)
 
             try:
+                adversary_id = request.adversary_id
                 # Use cache for adversary data
                 cache_key = f"adversary_analysis:{adversary_id}"
 
@@ -343,21 +558,30 @@ class ThreatHuntingMCPServer:
                 return {"error": str(e), "status": "failed"}
 
         @self.mcp.tool()
-        @self.security.require_permission("intel:enrich")
         async def enrich_ioc(ioc: str, ioc_type: str) -> Dict:
             """Enriches an IOC with threat intelligence
 
             Args:
-                ioc: Indicator of Compromise
-                ioc_type: Type of IOC (ip, domain, hash, etc.)
+                ioc: Indicator of Compromise (format depends on type)
+                ioc_type: Type of IOC (ip, domain, hash, url, email, file_path)
 
             Returns:
                 Dictionary containing IOC enrichment data
+
+            Examples:
+                ioc="192.168.1.1", ioc_type="ip"
+                ioc="malware.com", ioc_type="domain"
+                ioc="5d41402abc4b2a76b9719d911017c592", ioc_type="hash"
             """
-            user = self.security.get_current_user()
-            await self.security.audit_log("enrich_ioc", user, {"ioc": ioc, "type": ioc_type})
+            # Validate inputs
+            try:
+                request = EnrichIOCRequest(ioc=ioc, ioc_type=ioc_type)
+            except ValidationError as e:
+                return format_validation_error(e)
 
             try:
+                ioc = request.ioc
+                ioc_type = request.ioc_type
                 # Use cache for IOC enrichment
                 cache_key = f"ioc_enrichment:{ioc_type}:{ioc}"
 
@@ -381,21 +605,38 @@ class ThreatHuntingMCPServer:
                 tags: Optional[List[str]] = None,
                 keyword: Optional[str] = None,
                 hunt_type: Optional[str] = None,
-                limit: int = 20,
+                limit: int = 5,
             ) -> Dict:
                 """Search HEARTH community threat hunting hypotheses
 
                 Args:
                     tactic: Filter by MITRE ATT&CK tactic (e.g. "Credential Access")
                     tags: Filter by tags (e.g. ["lateral_movement", "powershell"])
-                    keyword: Search keyword in hypothesis and description
-                    hunt_type: Filter by hunt type: "flame", "ember", or "alchemy"
-                    limit: Maximum number of results (default 20)
+                    keyword: Search keyword in hypothesis and description (min 2 chars)
+                    hunt_type: Filter by hunt type: "flame", "ember", "alchemy" (or aliases: "hypothesis", "baseline", "model")
+                    limit: Maximum number of results (1-100, default 5)
 
                 Returns:
-                    Dictionary with search results and metadata
+                    Dictionary with search results and metadata (summary format)
+
+                Example:
+                    tactic="Credential Access", tags=["windows"], limit=10
                 """
+                # Validate inputs
                 try:
+                    request = SearchCommunityHuntsRequest(
+                        tactic=tactic, tags=tags, keyword=keyword, hunt_type=hunt_type, limit=limit
+                    )
+                except ValidationError as e:
+                    return format_validation_error(e)
+
+                try:
+                    # Use validated values
+                    tactic = request.tactic
+                    tags = request.tags
+                    keyword = request.keyword
+                    hunt_type = request.hunt_type
+                    limit = request.limit
                     return await self.hearth.search_community_hunts(
                         tactic=tactic, tags=tags, keyword=keyword, hunt_type=hunt_type, limit=limit
                     )
@@ -425,7 +666,7 @@ class ThreatHuntingMCPServer:
                 techniques: Optional[List[str]] = None,
                 keywords: Optional[List[str]] = None,
                 environment: Optional[str] = None,
-                limit: int = 10,
+                limit: int = 5,
             ) -> Dict:
                 """Get AI-powered hunt recommendations from community knowledge
 
@@ -434,10 +675,10 @@ class ThreatHuntingMCPServer:
                     techniques: MITRE ATT&CK technique IDs
                     keywords: Keywords describing your concerns
                     environment: Environment description (e.g. "Windows AD environment")
-                    limit: Maximum recommendations (default 10)
+                    limit: Maximum recommendations (default 5)
 
                 Returns:
-                    Dictionary with ranked hunt recommendations
+                    Dictionary with ranked hunt recommendations (summary format)
                 """
                 try:
                     return await self.hearth.recommend_hunts(
@@ -490,15 +731,15 @@ class ThreatHuntingMCPServer:
                     return {"error": str(e), "status": "failed"}
 
             @self.mcp.tool()
-            async def get_hunts_for_tactic(tactic: str, limit: int = 20) -> Dict:
+            async def get_hunts_for_tactic(tactic: str, limit: int = 5) -> Dict:
                 """Get community hunts for a MITRE ATT&CK tactic
 
                 Args:
                     tactic: MITRE ATT&CK tactic name (e.g. "Credential Access")
-                    limit: Maximum number of hunts (default 20)
+                    limit: Maximum number of hunts (default 5)
 
                 Returns:
-                    Dictionary with hunt list for the tactic
+                    Dictionary with hunt list for the tactic (summary format)
                 """
                 try:
                     return await self.hearth.get_hunts_for_tactic(tactic, limit)
@@ -523,15 +764,15 @@ class ThreatHuntingMCPServer:
                     return {"error": str(e), "status": "failed"}
 
             @self.mcp.tool()
-            async def get_recent_community_hunts(days: int = 30, limit: int = 20) -> Dict:
+            async def get_recent_community_hunts(days: int = 30, limit: int = 5) -> Dict:
                 """Get recently added community hunts
 
                 Args:
                     days: Number of days to look back (default 30)
-                    limit: Maximum number of hunts (default 20)
+                    limit: Maximum number of hunts (default 5)
 
                 Returns:
-                    Dictionary with recent hunts
+                    Dictionary with recent hunts (summary format)
                 """
                 try:
                     return await self.hearth.get_recent_community_hunts(days, limit)
@@ -695,6 +936,12 @@ class ThreatHuntingMCPServer:
         @self.mcp.resource("resource://hunting_playbooks")
         async def get_playbooks() -> List[Dict]:
             """Retrieves hunting playbooks from Confluence"""
+            if not self.features['atlassian']:
+                return {
+                    "status": "feature_unavailable",
+                    "error": "Atlassian integration not configured",
+                    "help": "Set ATLASSIAN_URL, ATLASSIAN_USERNAME, ATLASSIAN_API_TOKEN in .env file"
+                }
 
             async def fetch_playbooks():
                 return await self.atlassian.get_hunting_playbooks(settings.confluence_space)
@@ -704,6 +951,12 @@ class ThreatHuntingMCPServer:
         @self.mcp.resource("resource://threat_intelligence")
         async def get_threat_intel() -> List[Dict]:
             """Retrieves threat intelligence from Confluence"""
+            if not self.features['atlassian']:
+                return {
+                    "status": "feature_unavailable",
+                    "error": "Atlassian integration not configured",
+                    "help": "Set ATLASSIAN_URL, ATLASSIAN_USERNAME, ATLASSIAN_API_TOKEN in .env file"
+                }
 
             async def fetch_threat_intel():
                 return await self.atlassian.get_threat_intelligence()
@@ -712,17 +965,25 @@ class ThreatHuntingMCPServer:
 
         @self.mcp.resource("resource://mitre_attack_matrix")
         async def get_mitre_matrix() -> Dict:
-            """Provides MITRE ATT&CK framework data"""
-            return self.threat_intel.get_mitre_attack_matrix()
+            """Provides MITRE ATT&CK framework data (cached)"""
+
+            async def fetch_matrix():
+                return self.threat_intel.get_mitre_attack_matrix()
+
+            return await self.cache.get_or_compute("mitre_matrix:enterprise", fetch_matrix, "static_content")
 
         @self.mcp.resource("resource://hunting_methodologies")
         async def get_methodologies() -> Dict:
-            """Provides hunting methodology resources"""
-            return {
-                "peak": self.nlp._get_peak_methodology(),
-                "sqrrl": self.framework.get_sqrrl_methodology(),
-                "intelligence_driven": self.nlp._get_intelligence_methodology(),
-            }
+            """Provides hunting methodology resources (cached)"""
+
+            async def fetch_methodologies():
+                return {
+                    "peak": self.nlp._get_peak_methodology() if self.nlp else {},
+                    "sqrrl": self.framework.get_sqrrl_methodology(),
+                    "intelligence_driven": self.nlp._get_intelligence_methodology() if self.nlp else {},
+                }
+
+            return await self.cache.get_or_compute("methodologies:all", fetch_methodologies, "static_content")
 
     def _register_prompts(self):
         """Registers MCP prompts"""

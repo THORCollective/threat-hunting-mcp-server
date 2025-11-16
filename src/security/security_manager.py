@@ -365,6 +365,7 @@ class CacheManager:
             "ioc_lookups": 3600,  # 1 hour
             "hunt_results": 7200,  # 2 hours
             "static_playbooks": 604800,  # 7 days
+            "static_content": 86400,  # 24 hours - for MITRE matrix, methodologies, etc.
         }
 
     async def get_or_compute(self, key: str, compute_func, ttl_type: str):

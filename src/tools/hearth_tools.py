@@ -38,7 +38,7 @@ class HEARTHTools:
         tags: Optional[List[str]] = None,
         keyword: Optional[str] = None,
         hunt_type: Optional[str] = None,
-        limit: int = 20,
+        limit: int = 5,
     ) -> Dict:
         """
         Search HEARTH community hunt database
@@ -51,10 +51,11 @@ class HEARTHTools:
             tags: Filter by tags (e.g., ["lateral_movement", "powershell"])
             keyword: Search keyword in hypothesis and description
             hunt_type: Filter by hunt type: "flame" (hypothesis), "ember" (baseline), "alchemy" (ML)
-            limit: Maximum number of results (default 20)
+            limit: Maximum number of results (default 5)
 
         Returns:
-            Dictionary with search results and metadata
+            Dictionary with search results and metadata (summary format).
+            Use get_hunt_by_id() to retrieve full hunt details.
         """
         try:
             # Convert hunt type string to enum
@@ -73,7 +74,7 @@ class HEARTHTools:
             return {
                 "success": True,
                 "count": len(hunts),
-                "hunts": [hunt.to_dict() for hunt in hunts],
+                "hunts": [hunt.to_dict(summary=True) for hunt in hunts],
                 "filters": {"tactic": tactic, "tags": tags, "keyword": keyword, "hunt_type": hunt_type},
                 "source": "HEARTH Community Repository",
             }
@@ -106,7 +107,7 @@ class HEARTHTools:
             logger.error(f"Error retrieving hunt {hunt_id}: {e}")
             return {"success": False, "error": str(e), "hunt_id": hunt_id}
 
-    async def get_hunts_for_tactic(self, tactic: str, limit: int = 20) -> Dict:
+    async def get_hunts_for_tactic(self, tactic: str, limit: int = 5) -> Dict:
         """
         Get community hunts for a MITRE ATT&CK tactic
 
@@ -114,10 +115,11 @@ class HEARTHTools:
 
         Args:
             tactic: MITRE ATT&CK tactic name (e.g., "Credential Access", "Lateral Movement")
-            limit: Maximum number of hunts to return (default 20)
+            limit: Maximum number of hunts to return (default 5)
 
         Returns:
-            Dictionary with hunt list for the tactic
+            Dictionary with hunt list for the tactic (summary format).
+            Use get_hunt_by_id() to retrieve full hunt details.
         """
         try:
             hunts = self.repo.get_hunts_by_tactic(tactic, limit)
@@ -126,7 +128,7 @@ class HEARTHTools:
                 "success": True,
                 "tactic": tactic,
                 "count": len(hunts),
-                "hunts": [hunt.to_dict() for hunt in hunts],
+                "hunts": [hunt.to_dict(summary=True) for hunt in hunts],
                 "source": "HEARTH Community Repository",
             }
 
@@ -153,7 +155,7 @@ class HEARTHTools:
                 "success": True,
                 "technique_id": technique_id,
                 "count": len(hunts),
-                "hunts": [hunt.to_dict() for hunt in hunts],
+                "hunts": [hunt.to_dict(summary=True) for hunt in hunts],
                 "source": "HEARTH Community Repository",
             }
 
@@ -167,7 +169,7 @@ class HEARTHTools:
         techniques: Optional[List[str]] = None,
         keywords: Optional[List[str]] = None,
         environment: Optional[str] = None,
-        limit: int = 10,
+        limit: int = 5,
     ) -> Dict:
         """
         Get personalized hunt recommendations from community knowledge
@@ -179,10 +181,11 @@ class HEARTHTools:
             techniques: MITRE ATT&CK technique IDs
             keywords: Keywords describing your concerns (e.g., ["lateral movement", "powershell"])
             environment: Environment description (e.g., "Windows AD environment")
-            limit: Maximum recommendations (default 10)
+            limit: Maximum recommendations (default 5)
 
         Returns:
-            Dictionary with ranked hunt recommendations
+            Dictionary with ranked hunt recommendations (summary format).
+            Use get_hunt_by_id() to retrieve full hunt details.
         """
         try:
             context = {
@@ -199,7 +202,7 @@ class HEARTHTools:
                 "count": len(recommendations),
                 "recommendations": [
                     {
-                        "hunt": hunt.to_dict(),
+                        "hunt": hunt.to_dict(summary=True),
                         "relevance_score": round(score, 2),
                         "match_reasons": self._explain_match(hunt, context, score),
                     }
@@ -213,7 +216,7 @@ class HEARTHTools:
             logger.error(f"Error generating recommendations: {e}")
             return {"success": False, "error": str(e), "count": 0, "recommendations": []}
 
-    async def get_recent_community_hunts(self, days: int = 30, limit: int = 20) -> Dict:
+    async def get_recent_community_hunts(self, days: int = 30, limit: int = 5) -> Dict:
         """
         Get recently added community hunts
 
@@ -221,10 +224,11 @@ class HEARTHTools:
 
         Args:
             days: Number of days to look back (default 30)
-            limit: Maximum number of hunts (default 20)
+            limit: Maximum number of hunts (default 5)
 
         Returns:
-            Dictionary with recent hunts
+            Dictionary with recent hunts (summary format).
+            Use get_hunt_by_id() to retrieve full hunt details.
         """
         try:
             hunts = self.repo.get_recent_hunts(days, limit)
@@ -233,7 +237,7 @@ class HEARTHTools:
                 "success": True,
                 "days": days,
                 "count": len(hunts),
-                "hunts": [hunt.to_dict() for hunt in hunts],
+                "hunts": [hunt.to_dict(summary=True) for hunt in hunts],
                 "source": "HEARTH Community Repository",
             }
 
@@ -312,7 +316,7 @@ class HEARTHTools:
                 "success": True,
                 "incident_description": incident_description,
                 "count": len(hunts),
-                "suggested_hunts": [hunt.to_dict() for hunt in hunts],
+                "suggested_hunts": [hunt.to_dict(summary=True) for hunt in hunts],
                 "source": "HEARTH Community Repository",
             }
 

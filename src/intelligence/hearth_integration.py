@@ -42,21 +42,40 @@ class HEARTHHunt:
     references: List[str]
     file_path: str
 
-    def to_dict(self) -> Dict:
-        """Convert to dictionary representation"""
-        return {
+    def to_dict(self, summary: bool = False) -> Dict:
+        """
+        Convert to dictionary representation
+
+        Args:
+            summary: If True, returns abbreviated version without long text fields
+
+        Returns:
+            Dictionary representation of hunt
+        """
+        base = {
             "hunt_id": self.hunt_id,
             "hunt_type": self.hunt_type.value,
             "hypothesis": self.hypothesis,
             "tactic": self.tactic,
-            "notes": self.notes,
             "tags": self.tags,
             "submitter": self.submitter,
-            "why": self.why_section,
-            "next_steps": self.next_steps,
-            "references": self.references,
             "source": f"HEARTH/{self.file_path}",
         }
+
+        if summary:
+            # Summary mode: truncate long fields
+            base["notes_preview"] = self.notes[:100] + "..." if len(self.notes) > 100 else self.notes
+            base["has_details"] = bool(self.why_section or self.next_steps or self.references)
+        else:
+            # Full mode: include everything
+            base.update({
+                "notes": self.notes,
+                "why": self.why_section,
+                "next_steps": self.next_steps,
+                "references": self.references,
+            })
+
+        return base
 
 
 class HEARTHRepository:

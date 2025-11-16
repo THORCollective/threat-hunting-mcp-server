@@ -7,19 +7,26 @@ A next-generation Model Context Protocol (MCP) server that **hunts for behaviors
 This MCP server is designed around a core principle from the **[Pyramid of Pain](https://detect-respond.blogspot.com/2013/03/the-pyramid-of-pain.html)**:
 
 ```
-        TOUGH (Hunt Here!)
-       /                  \
-      /   TTPs (Behaviors) \   ← We focus HERE
-     /______________________\
-    /   Tools (Capabilities) \
-   /__________________________\
-  /   Host/Network Artifacts  \
- /______________________________\
-/     Domain Names (Annoying)    \
-/_________________________________\
-/      IP Addresses (Easy)         \
-/____________________________________\
-          Hash Values (Trivial)
+                            ▲
+                           ╱ ╲
+                          ╱   ╲ 🎯 TOUGH
+                         ╱ TTPs╲ ← WE FOCUS HERE
+                        ╱———————╲
+                       ╱         ╲
+                      ╱ 🛠️  Tools ╲
+                     ╱—————————————╲
+                    ╱               ╲
+                   ╱ 📊 Host/Network ╲
+                  ╱———————————————————╲
+                 ╱                     ╲
+                ╱  🌐 Domain Names      ╲
+               ╱—————————————————————————╲
+              ╱                           ╲
+             ╱     🔢 IP Addresses         ╲
+            ╱———————————————————————————————╲
+           ╱                                 ╲
+          ╱       #️⃣  Hash Values             ╲
+         ╱—————————————————————————————————————╲
 ```
 
 **Why behavioral hunting?**

@@ -58,8 +58,8 @@ Analyze which MITRE ATT&CK tactics have the most community hunt coverage
 ### MCP Server Configuration
 - **Location**: `~/.claude/.claude/.mcp.json`
 - **Server Name**: `threat-hunting`
-- **Python**: `/Users/sydney/code/01-threat-hunting/threat_hunting_mcp/venv/bin/python`
-- **Entry Point**: `/Users/sydney/code/01-threat-hunting/threat_hunting_mcp/run_server.py`
+- **Python**: `./venv/bin/python` (or `python3` if using system Python)
+- **Entry Point**: `./run_server.py`
 
 ### Available Tools (9 HEARTH Tools)
 1. `search_community_hunts` - Search 50+ curated hypotheses
@@ -73,7 +73,7 @@ Analyze which MITRE ATT&CK tactics have the most community hunt coverage
 9. `get_recent_community_hunts` - Recent additions
 
 ### HEARTH Repository
-- **Local Path**: `/Users/sydney/code/07-other-projects/HEARTH`
+- **Local Path**: Auto-detected (defaults to `../HEARTH` relative to project) or configured via HEARTH_PATH env var
 - **Contains**: 50+ community-curated threat hunting hypotheses
 - **Types**: Flames (hypothesis), Embers (baseline), Alchemy (ML)
 
@@ -102,7 +102,7 @@ pip install -r requirements.txt
 venv/bin/python -c "from src.config import settings; print(f'HEARTH: {settings.hearth_path}')"
 ```
 
-Should output: `HEARTH: /Users/sydney/code/07-other-projects/HEARTH`
+Should output: `HEARTH: /path/to/HEARTH` (your actual HEARTH repository path)
 
 ## 🎯 Next Steps
 

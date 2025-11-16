@@ -1,7 +1,7 @@
-from enum import Enum
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 from datetime import datetime
+from enum import Enum
+from typing import Dict, List, Optional
 
 
 class HuntType(Enum):
@@ -21,6 +21,7 @@ class HuntMaturityLevel(Enum):
 @dataclass
 class ThreatHunt:
     """Represents a threat hunt following PEAK methodology"""
+
     hunt_id: str
     hunt_type: HuntType
     hypothesis: str

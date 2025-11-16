@@ -1,21 +1,57 @@
 # Threat Hunting MCP Server
 
-A next-generation Model Context Protocol (MCP) server that **thinks like an expert threat hunter**, integrating advanced cognitive patterns, graph-based correlation, deception technology, and behavioral analytics.
+A next-generation Model Context Protocol (MCP) server that **hunts for behaviors, not indicators**. Built on the philosophy that effective threat hunting focuses on adversary **Tactics, Techniques, and Procedures (TTPs)** at the top of the Pyramid of Pain—the behaviors that are hardest for attackers to change.
+
+## Philosophy: Hunt Behaviors, Not Indicators
+
+This MCP server is designed around a core principle from the **Pyramid of Pain**:
+
+```
+        TOUGH (Hunt Here!)
+       /                  \
+      /   TTPs (Behaviors) \   ← We focus HERE
+     /______________________\
+    /   Tools (Capabilities) \
+   /__________________________\
+  /   Host/Network Artifacts  \
+ /______________________________\
+/     Domain Names (Annoying)    \
+/_________________________________\
+/      IP Addresses (Easy)         \
+/____________________________________\
+          Hash Values (Trivial)
+```
+
+**Why behavioral hunting?**
+- **Hash values** → Adversaries change in seconds
+- **IP addresses** → Adversaries change in minutes
+- **Domain names** → Adversaries change in hours
+- **Network/Host artifacts** → Adversaries change in days
+- **Tools** → Adversaries change in weeks
+- **TTPs (Behaviors)** → Adversaries change in months/years ✅ **Hunt for these!**
+
+When you hunt for *how* adversaries behave rather than *what* specific indicators they use, you create durable detections that survive indicator rotation and force adversaries to fundamentally change their operations.
 
 ## Features
+
+### Behavioral Hunting Focus
+- **TTP-First Approach**: All hunts prioritize behavioral patterns over atomic indicators
+- **MITRE ATT&CK Integration**: Deep integration with technique-level behavioral analytics
+- **Behavior Pattern Library**: Pre-built detection logic for common adversary behaviors
+- **Anti-Evasion Design**: Hunt for behaviors that persist across tool/infrastructure changes
 
 ### Core Hunting Frameworks
 - **PEAK Methodology**: Prepare, Execute, Act with Knowledge - state-of-the-art framework
 - **SQRRL Framework**: Hunting Maturity Model (HMM0-HMM4) progression
 - **TaHiTI Framework** ⭐ NEW: Targeted Hunting integrating Threat Intelligence (3 phases, 6 steps)
-- **Intelligence-Driven**: Hypothesis-driven hunting using threat intelligence
+- **Intelligence-Driven**: Hypothesis-driven hunting using behavioral threat intelligence
 
 ### Advanced Cognitive Capabilities ⭐ NEW
 - **Bias Detection & Mitigation**: Identifies confirmation, anchoring, and availability biases
 - **Competing Hypotheses Generation**: Analysis of Competing Hypotheses (ACH) methodology
-- **Confidence Scoring**: Multi-factor assessment with Pyramid of Pain weighting
+- **Confidence Scoring**: Multi-factor assessment **prioritizing TTP-based detections**
 - **Hunt Stopping Criteria**: Prevents tunnel vision with objective completion metrics
-- **Expert Pattern Recognition**: Built-in heuristics from elite threat hunters (88.3% accuracy)
+- **Expert Pattern Recognition**: Built-in behavioral heuristics from elite threat hunters (88.3% accuracy)
 
 ### Graph-Based Threat Detection ⭐ NEW
 - **Attack Path Analysis**: Identifies critical paths from initial compromise to crown jewels
@@ -41,12 +77,95 @@ A next-generation Model Context Protocol (MCP) server that **thinks like an expe
 - **Incident-Based Suggestions**: Get relevant hunts based on incident descriptions
 
 ### Traditional Capabilities
-- **Natural Language Processing**: Convert queries into executable threat hunts
+- **Natural Language Processing**: Convert behavioral hunt requests into executable queries
 - **Atlassian Integration**: Confluence and Jira for knowledge management
-- **Splunk Integration**: Sophisticated hunting queries using Splunk SDK
-- **MITRE ATT&CK Framework**: Comprehensive threat intelligence and technique mapping
+- **Splunk Integration**: TTP-focused hunting queries using Splunk SDK
+- **MITRE ATT&CK Framework**: Comprehensive technique and sub-technique mapping
 - **Security Controls**: Authentication, encryption, audit logging, rate limiting
 - **Caching & Performance**: Redis-based caching for optimal performance
+
+## Behavioral Hunting Examples
+
+### What We Hunt For (Top of Pyramid)
+
+**✅ Good: Behavioral Patterns (TTPs)**
+- Process injection techniques (T1055.*) - behavior persists across tools
+- LSASS memory access patterns - fundamental credential theft behavior
+- Lateral movement via remote services - core post-compromise behavior
+- Living-off-the-Land binaries (LOLBins) - detection-evasion behavior
+- Parent-child process anomalies - execution pattern behaviors
+- Kerberoasting patterns - Active Directory attack behaviors
+
+**❌ Avoid: Atomic Indicators (Easy to Change)**
+- Specific malware hashes - trivial to modify
+- Known-bad IP addresses - adversaries rotate rapidly
+- C2 domain names - disposable infrastructure
+- Specific file paths - easily changed
+
+### Behavioral Hunt Examples
+
+**Example 1: Credential Access Behavior**
+```
+Hunt for: Any process accessing LSASS memory (T1003.001)
+Why: This behavior is required for credential theft, regardless of the tool
+Tools that use it: Mimikatz, ProcDump, custom malware
+Detection persists: Even when tools change
+```
+
+**Example 2: Lateral Movement Behavior**
+```
+Hunt for: Remote execution patterns via WMI/DCOM/SMB (T1021.*)
+Why: Fundamental behavior for spreading through networks
+Tools that use it: PsExec, Impacket, WMIC, custom tools
+Detection persists: Even with infrastructure/tool rotation
+```
+
+**Example 3: Defense Evasion Behavior**
+```
+Hunt for: Process injection patterns (T1055.*)
+Why: Core evasion technique requiring specific OS API calls
+Tools that use it: Cobalt Strike, Metasploit, custom loaders
+Detection persists: API call patterns remain consistent
+```
+
+## Getting Started with Behavioral Hunting
+
+**New to behavioral hunting?** Start with these resources:
+
+1. **[Quick Reference Card](BEHAVIORAL_HUNTING_QUICK_REF.md)** - One-page behavioral hunting cheat sheet
+2. **[Behavioral Hunting Guide](BEHAVIORAL_HUNTING_GUIDE.md)** - Complete guide to hunting behaviors vs indicators
+3. **[HEARTH Community Hunts](#hearth-community-integration)** - 50+ real-world behavioral hunt hypotheses
+4. **Example Hunts Below** - See practical examples of TTP-based detection
+
+### Quick Behavioral Hunt Examples
+
+Try these natural language queries focused on behaviors:
+
+```bash
+# Credential Access Behaviors
+"Hunt for any process accessing LSASS memory (T1003.001)"
+"Find credential dumping patterns regardless of tool used"
+
+# Lateral Movement Behaviors
+"Detect lateral movement via remote execution (T1021.*)"
+"Hunt for RDP/WMI/PsExec execution patterns"
+
+# Process Injection Behaviors
+"Find process injection into system processes (T1055)"
+"Detect CreateRemoteThread patterns across all tools"
+
+# Living-off-the-Land Behaviors
+"Hunt for PowerShell download cradles (T1059.001)"
+"Detect LOLBin abuse patterns (certutil, bitsadmin, etc.)"
+
+# Command and Control Behaviors
+"Find C2 beaconing patterns regardless of infrastructure"
+"Detect DNS tunneling behaviors (T1071.004)"
+```
+
+**Notice:** These focus on **adversary behaviors** that persist across tool/infrastructure changes, not specific IOCs that change hourly.
+
+---
 
 ## Architecture
 
@@ -153,7 +272,7 @@ The fastest way to get started with community hunt knowledge:
      "mcpServers": {
        "threat-hunting": {
          "command": "python3",
-         "args": ["-u", "/Users/sydney/code/01-threat-hunting/threat_hunting_mcp/run_server.py"]
+         "args": ["-u", "/path/to/threat_hunting_mcp/run_server.py"]
        }
      }
    }
@@ -576,5 +695,49 @@ For support and questions:
 - Provide detailed reproduction steps
 
 ---
+
+## Behavioral Hunting Manifesto
+
+This threat hunting MCP server is built on these core principles:
+
+### 1. **Hunt Behaviors, Not Indicators**
+Focus on adversary TTPs (Tactics, Techniques, Procedures) at the top of the Pyramid of Pain. These are hard for adversaries to change and provide durable detection value.
+
+### 2. **Prioritize What Persists**
+- ❌ **Avoid:** Hash-based, IP-based, domain-based hunting (bottom of pyramid)
+- ✅ **Focus:** Behavioral patterns, process relationships, API call sequences (top of pyramid)
+
+### 3. **Think Like an Adversary**
+Ask: "What MUST the adversary do to achieve their objective?" Those required actions are your best hunting opportunities.
+
+### 4. **Build Durable Detections**
+A good behavioral detection:
+- Works across multiple tools performing the same technique
+- Survives infrastructure and payload rotation
+- Maps clearly to MITRE ATT&CK techniques
+- Forces adversaries to change operations, not just tools
+
+### 5. **Pivot from IOCs to Behaviors**
+When you receive an IOC (hash, IP, domain):
+1. Understand what behavior/technique it represents
+2. Identify the required adversary actions
+3. Hunt for those behaviors across ALL tools/variants
+4. Build detections that persist beyond the specific IOC
+
+### Example: The Mindset Shift
+
+**Old Way (IOC-Focused):**
+> "We detected malware hash abc123. Let's add it to our blocklist."
+>
+> *Result:* Adversary recompiles → New hash → Detection fails → Repeat forever
+
+**New Way (Behavior-Focused):**
+> "This malware performed credential dumping via LSASS memory access. Let's hunt for ALL processes accessing LSASS memory."
+>
+> *Result:* Detection catches Mimikatz, custom tools, future variants → Adversary must change entire technique
+
+---
+
+**Remember:** Make it **TOUGH** for adversaries by hunting at the top of the Pyramid of Pain.
 
 **Note**: This is a defensive security tool designed for threat hunting and detection. Use responsibly and in accordance with your organization's security policies.

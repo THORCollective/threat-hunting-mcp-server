@@ -1,19 +1,19 @@
 """Threat intelligence integrations including MITRE ATT&CK, THOR Collective, and HEARTH"""
 
-from .threat_intel import ThreatIntelligence
-from .thor_collective import THORCollectiveIntegration
 from .hearth_integration import (
-    HEARTHRepository,
-    HEARTHIntelligence,
     HEARTHHunt,
-    HuntType
+    HEARTHIntelligence,
+    HEARTHRepository,
+    HuntType,
 )
+from .thor_collective import THORCollectiveIntegration
+from .threat_intel import ThreatIntelligenceEngine
 
 __all__ = [
-    'ThreatIntelligence',
-    'THORCollectiveIntegration',
-    'HEARTHRepository',
-    'HEARTHIntelligence',
-    'HEARTHHunt',
-    'HuntType'
+    "ThreatIntelligenceEngine",
+    "THORCollectiveIntegration",
+    "HEARTHRepository",
+    "HEARTHIntelligence",
+    "HEARTHHunt",
+    "HuntType",
 ]

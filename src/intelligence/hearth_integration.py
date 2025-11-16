@@ -7,21 +7,20 @@ of truth for the MCP server. Provides access to hypothesis-driven hunts (Flames)
 baseline hunts (Embers), and model-assisted hunts (Alchemy).
 """
 
-from typing import Dict, List, Optional, Tuple
-from pathlib import Path
-from dataclasses import dataclass
-from enum import Enum
-import sqlite3
-import re
 import logging
+import re
+from dataclasses import dataclass
 from datetime import datetime
-
+from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 class HuntType(Enum):
     """PEAK framework hunt types from HEARTH"""
+
     FLAME = "flame"  # Hypothesis-driven (H prefix)
     EMBER = "ember"  # Baseline (B prefix)
     ALCHEMY = "alchemy"  # Model-assisted (M prefix)
@@ -30,6 +29,7 @@ class HuntType(Enum):
 @dataclass
 class HEARTHHunt:
     """Represents a hunt from the HEARTH repository"""
+
     hunt_id: str
     hunt_type: HuntType
     hypothesis: str
@@ -45,17 +45,17 @@ class HEARTHHunt:
     def to_dict(self) -> Dict:
         """Convert to dictionary representation"""
         return {
-            'hunt_id': self.hunt_id,
-            'hunt_type': self.hunt_type.value,
-            'hypothesis': self.hypothesis,
-            'tactic': self.tactic,
-            'notes': self.notes,
-            'tags': self.tags,
-            'submitter': self.submitter,
-            'why': self.why_section,
-            'next_steps': self.next_steps,
-            'references': self.references,
-            'source': f'HEARTH/{self.file_path}'
+            "hunt_id": self.hunt_id,
+            "hunt_type": self.hunt_type.value,
+            "hypothesis": self.hypothesis,
+            "tactic": self.tactic,
+            "notes": self.notes,
+            "tags": self.tags,
+            "submitter": self.submitter,
+            "why": self.why_section,
+            "next_steps": self.next_steps,
+            "references": self.references,
+            "source": f"HEARTH/{self.file_path}",
         }
 
 
@@ -67,13 +67,18 @@ class HEARTHRepository:
     the PEAK framework (Flames, Embers, Alchemy).
     """
 
-    def __init__(self, hearth_path: str = "/Users/sydney/code/07-other-projects/HEARTH"):
+    def __init__(self, hearth_path: str = None):
         """
         Initialize HEARTH repository integration
 
         Args:
-            hearth_path: Path to the HEARTH repository
+            hearth_path: Path to the HEARTH repository (defaults to ../HEARTH relative to project root)
         """
+        if hearth_path is None:
+            # Default to ../HEARTH relative to project root
+            project_root = Path(__file__).parent.parent.parent
+            hearth_path = project_root.parent / "HEARTH"
+
         self.hearth_path = Path(hearth_path)
         self.db_path = self.hearth_path / "database" / "hunts.db"
 
@@ -91,7 +96,10 @@ class HEARTHRepository:
     def _validate_paths(self):
         """Validate HEARTH repository structure"""
         if not self.hearth_path.exists():
-            raise ValueError(f"HEARTH repository not found at {self.hearth_path}")
+            raise ValueError(
+                f"HEARTH repository not found at {
+                    self.hearth_path}"
+            )
 
         if not self.flames_dir.exists():
             logger.warning(f"Flames directory not found at {self.flames_dir}")
@@ -134,12 +142,14 @@ class HEARTHRepository:
 
         return hunt
 
-    def search_hunts(self,
-                    tactic: Optional[str] = None,
-                    tags: Optional[List[str]] = None,
-                    hunt_type: Optional[HuntType] = None,
-                    keyword: Optional[str] = None,
-                    limit: int = 50) -> List[HEARTHHunt]:
+    def search_hunts(
+        self,
+        tactic: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        hunt_type: Optional[HuntType] = None,
+        keyword: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[HEARTHHunt]:
         """
         Search for hunts matching criteria
 
@@ -187,9 +197,11 @@ class HEARTHRepository:
 
                 if keyword:
                     keyword_lower = keyword.lower()
-                    if (keyword_lower not in hunt.hypothesis.lower() and
-                        keyword_lower not in hunt.why_section.lower() and
-                        keyword_lower not in hunt.notes.lower()):
+                    if (
+                        keyword_lower not in hunt.hypothesis.lower()
+                        and keyword_lower not in hunt.why_section.lower()
+                        and keyword_lower not in hunt.notes.lower()
+                    ):
                         continue
 
                 results.append(hunt)
@@ -224,9 +236,11 @@ class HEARTHRepository:
         """
         results = []
 
-        for directory, h_type in [(self.flames_dir, HuntType.FLAME),
-                                  (self.embers_dir, HuntType.EMBER),
-                                  (self.alchemy_dir, HuntType.ALCHEMY)]:
+        for directory, h_type in [
+            (self.flames_dir, HuntType.FLAME),
+            (self.embers_dir, HuntType.EMBER),
+            (self.alchemy_dir, HuntType.ALCHEMY),
+        ]:
             if not directory.exists():
                 continue
 
@@ -284,9 +298,11 @@ class HEARTHRepository:
         cutoff = datetime.now() - timedelta(days=days)
         recent = []
 
-        for directory, h_type in [(self.flames_dir, HuntType.FLAME),
-                                  (self.embers_dir, HuntType.EMBER),
-                                  (self.alchemy_dir, HuntType.ALCHEMY)]:
+        for directory, h_type in [
+            (self.flames_dir, HuntType.FLAME),
+            (self.embers_dir, HuntType.EMBER),
+            (self.alchemy_dir, HuntType.ALCHEMY),
+        ]:
             if not directory.exists():
                 continue
 
@@ -306,9 +322,7 @@ class HEARTHRepository:
 
         return [hunt for _, hunt in recent[:limit]]
 
-    def recommend_hunts(self,
-                       context: Dict,
-                       limit: int = 10) -> List[Tuple[HEARTHHunt, float]]:
+    def recommend_hunts(self, context: Dict, limit: int = 10) -> List[Tuple[HEARTHHunt, float]]:
         """
         Recommend hunts based on context
 
@@ -321,9 +335,9 @@ class HEARTHRepository:
         """
         recommendations = []
 
-        tactics = context.get('tactics', [])
-        techniques = context.get('techniques', [])
-        keywords = context.get('keywords', [])
+        tactics = context.get("tactics", [])
+        techniques = context.get("techniques", [])
+        keywords = context.get("keywords", [])
 
         # Search for relevant hunts
         all_hunts = self.search_hunts(limit=200)
@@ -367,30 +381,25 @@ class HEARTHRepository:
         Returns:
             Dictionary with statistics
         """
-        stats = {
-            'total_hunts': 0,
-            'flames': 0,
-            'embers': 0,
-            'alchemy': 0,
-            'tactics': set(),
-            'unique_submitters': set()
-        }
+        stats = {"total_hunts": 0, "flames": 0, "embers": 0, "alchemy": 0, "tactics": set(), "unique_submitters": set()}
 
-        for directory, h_type in [(self.flames_dir, HuntType.FLAME),
-                                  (self.embers_dir, HuntType.EMBER),
-                                  (self.alchemy_dir, HuntType.ALCHEMY)]:
+        for directory, h_type in [
+            (self.flames_dir, HuntType.FLAME),
+            (self.embers_dir, HuntType.EMBER),
+            (self.alchemy_dir, HuntType.ALCHEMY),
+        ]:
             if not directory.exists():
                 continue
 
             count = len([f for f in directory.glob("*.md") if "template" not in f.name.lower()])
-            stats['total_hunts'] += count
+            stats["total_hunts"] += count
 
             if h_type == HuntType.FLAME:
-                stats['flames'] = count
+                stats["flames"] = count
             elif h_type == HuntType.EMBER:
-                stats['embers'] = count
+                stats["embers"] = count
             elif h_type == HuntType.ALCHEMY:
-                stats['alchemy'] = count
+                stats["alchemy"] = count
 
             # Parse for additional stats
             for hunt_file in directory.glob("*.md"):
@@ -399,23 +408,23 @@ class HEARTHRepository:
 
                 hunt = self._parse_hunt_file(hunt_file, h_type)
                 if hunt:
-                    stats['tactics'].add(hunt.tactic)
-                    stats['unique_submitters'].add(hunt.submitter)
+                    stats["tactics"].add(hunt.tactic)
+                    stats["unique_submitters"].add(hunt.submitter)
 
         # Convert sets to counts
-        stats['unique_tactics'] = len(stats['tactics'])
-        stats['unique_submitters'] = len(stats['unique_submitters'])
-        del stats['tactics']
+        stats["unique_tactics"] = len(stats["tactics"])
+        stats["unique_submitters"] = len(stats["unique_submitters"])
+        del stats["tactics"]
 
         return stats
 
     def _get_hunt_location(self, hunt_id: str) -> Tuple[Optional[HuntType], Optional[Path]]:
         """Determine hunt type and directory from hunt ID"""
-        if hunt_id.startswith('H'):
+        if hunt_id.startswith("H"):
             return HuntType.FLAME, self.flames_dir
-        elif hunt_id.startswith('B'):
+        elif hunt_id.startswith("B"):
             return HuntType.EMBER, self.embers_dir
-        elif hunt_id.startswith('M'):
+        elif hunt_id.startswith("M"):
             return HuntType.ALCHEMY, self.alchemy_dir
         return None, None
 
@@ -463,7 +472,7 @@ class HEARTHRepository:
                 why_section=why_section or "",
                 next_steps=next_steps,
                 references=references,
-                file_path=str(file_path.relative_to(self.hearth_path))
+                file_path=str(file_path.relative_to(self.hearth_path)),
             )
 
         except Exception as e:
@@ -473,37 +482,37 @@ class HEARTHRepository:
     def _extract_hypothesis(self, content: str) -> Optional[str]:
         """Extract hypothesis from markdown table"""
         # Try to find the table row
-        table_match = re.search(r'\|[^|]*\|([^|]+)\|([^|]+)\|', content)
+        table_match = re.search(r"\|[^|]*\|([^|]+)\|([^|]+)\|", content)
         if table_match:
             # Second column is typically the hypothesis
             hypothesis = table_match.group(2).strip()
-            if hypothesis and not hypothesis.startswith('Idea / Hypothesis'):
+            if hypothesis and not hypothesis.startswith("Idea / Hypothesis"):
                 return hypothesis
 
         # Fallback: try to get from first line (description before table)
-        lines = content.split('\n')
+        lines = content.split("\n")
         for line in lines[1:5]:  # Check first few lines after title
             line = line.strip()
-            if line and not line.startswith('#') and not line.startswith('|'):
+            if line and not line.startswith("#") and not line.startswith("|"):
                 return line
 
         return None
 
     def _extract_tactic(self, content: str) -> Optional[str]:
         """Extract MITRE ATT&CK tactic from table"""
-        table_match = re.search(r'\|[^|]*\|[^|]*\|([^|]+)\|', content)
+        table_match = re.search(r"\|[^|]*\|[^|]*\|([^|]+)\|", content)
         if table_match:
             tactic = table_match.group(1).strip()
-            if tactic and not tactic.startswith('Tactic'):
+            if tactic and not tactic.startswith("Tactic"):
                 return tactic
         return None
 
     def _extract_notes(self, content: str) -> Optional[str]:
         """Extract notes from table"""
-        table_match = re.search(r'\|[^|]*\|[^|]*\|[^|]*\|([^|]+)\|', content)
+        table_match = re.search(r"\|[^|]*\|[^|]*\|[^|]*\|([^|]+)\|", content)
         if table_match:
             notes = table_match.group(1).strip()
-            if notes and not notes.startswith('Notes'):
+            if notes and not notes.startswith("Notes"):
                 return notes
         return None
 
@@ -511,22 +520,22 @@ class HEARTHRepository:
         """Extract tags from content"""
         tags = []
         # Look for hashtags in the table
-        tag_matches = re.findall(r'#(\w+)', content)
+        tag_matches = re.findall(r"#(\w+)", content)
         tags.extend(tag_matches)
         return list(set(tags))  # Remove duplicates
 
     def _extract_submitter(self, content: str) -> Optional[str]:
         """Extract submitter from table"""
         # Look for markdown link pattern or plain name
-        submitter_match = re.search(r'\[([^\]]+)\]\([^\)]+\)', content)
+        submitter_match = re.search(r"\[([^\]]+)\]\([^\)]+\)", content)
         if submitter_match:
             return submitter_match.group(1)
 
         # Fallback: look for last column in table
-        table_match = re.search(r'\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|([^|]+)\|', content)
+        table_match = re.search(r"\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|([^|]+)\|", content)
         if table_match:
             submitter = table_match.group(1).strip()
-            if submitter and not submitter.startswith('Submitter'):
+            if submitter and not submitter.startswith("Submitter"):
                 return submitter
 
         return None
@@ -538,7 +547,7 @@ class HEARTHRepository:
         if match:
             section_content = match.group(1).strip()
             # Clean up markdown list formatting
-            section_content = re.sub(r'^- ', '', section_content, flags=re.MULTILINE)
+            section_content = re.sub(r"^- ", "", section_content, flags=re.MULTILINE)
             return section_content
         return None
 
@@ -548,7 +557,7 @@ class HEARTHRepository:
         ref_section = self._extract_section(content, "## References")
         if ref_section:
             # Find all URLs
-            urls = re.findall(r'https?://[^\s\)]+', ref_section)
+            urls = re.findall(r"https?://[^\s\)]+", ref_section)
             references.extend(urls)
         return references
 
@@ -577,10 +586,10 @@ class HEARTHIntelligence:
         for tactic in tactics:
             hunts = self.repo.get_hunts_by_tactic(tactic)
             coverage[tactic] = {
-                'hunt_count': len(hunts),
-                'flame_count': sum(1 for h in hunts if h.hunt_type == HuntType.FLAME),
-                'ember_count': sum(1 for h in hunts if h.hunt_type == HuntType.EMBER),
-                'alchemy_count': sum(1 for h in hunts if h.hunt_type == HuntType.ALCHEMY)
+                "hunt_count": len(hunts),
+                "flame_count": sum(1 for h in hunts if h.hunt_type == HuntType.FLAME),
+                "ember_count": sum(1 for h in hunts if h.hunt_type == HuntType.EMBER),
+                "alchemy_count": sum(1 for h in hunts if h.hunt_type == HuntType.ALCHEMY),
             }
 
         return coverage
@@ -598,11 +607,7 @@ class HEARTHIntelligence:
         # Extract keywords from description
         keywords = self._extract_keywords(incident_description)
 
-        context = {
-            'keywords': keywords,
-            'tactics': [],
-            'techniques': []
-        }
+        context = {"keywords": keywords, "tactics": [], "techniques": []}
 
         # Get recommendations
         recommendations = self.repo.recommend_hunts(context, limit=10)
@@ -616,10 +621,28 @@ class HEARTHIntelligence:
 
         # Common threat hunting keywords
         threat_keywords = [
-            'lateral', 'movement', 'credential', 'privilege', 'escalation',
-            'persistence', 'execution', 'defense', 'evasion', 'exfiltration',
-            'command', 'control', 'c2', 'powershell', 'rundll32', 'wmi',
-            'scheduled', 'task', 'registry', 'service', 'process', 'injection'
+            "lateral",
+            "movement",
+            "credential",
+            "privilege",
+            "escalation",
+            "persistence",
+            "execution",
+            "defense",
+            "evasion",
+            "exfiltration",
+            "command",
+            "control",
+            "c2",
+            "powershell",
+            "rundll32",
+            "wmi",
+            "scheduled",
+            "task",
+            "registry",
+            "service",
+            "process",
+            "injection",
         ]
 
         text_lower = text.lower()

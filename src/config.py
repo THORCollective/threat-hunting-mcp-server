@@ -1,38 +1,38 @@
+from typing import Optional
+
 from pydantic_settings import BaseSettings
-from typing import Dict, Optional
-import os
 
 
 class Settings(BaseSettings):
     # MCP Server
     server_name: str = "threat_hunting_kb"
-    
-    # Atlassian
-    atlassian_url: str
-    atlassian_username: str
-    atlassian_api_token: str
+
+    # Atlassian (optional - commented out for now)
+    atlassian_url: Optional[str] = None
+    atlassian_username: Optional[str] = None
+    atlassian_api_token: Optional[str] = None
     confluence_space: str = "THREATHUNT"
     jira_project: str = "HUNT"
-    
-    # Splunk
-    splunk_host: str
+
+    # Splunk (optional - commented out for now)
+    splunk_host: Optional[str] = None
     splunk_port: int = 8089
-    splunk_token: str
-    
+    splunk_token: Optional[str] = None
+
     # Security
-    jwt_secret: str
+    jwt_secret: str = "default-secret-change-in-production"
     encryption_key: Optional[str] = None
-    
+
     # Redis
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_db: int = 0
     redis_password: Optional[str] = None
-    
+
     # Logging
     log_level: str = "INFO"
-    audit_log_path: str = "/var/log/threat_hunting_mcp/audit.log"
-    
+    audit_log_path: str = "/tmp/threat_hunting_mcp_audit.log"
+
     # ML/NLP
     spacy_model: str = "en_core_web_lg"
 

@@ -1,8 +1,9 @@
 """Implements expert threat hunter cognitive patterns"""
-from typing import Dict, List, Optional
-from datetime import datetime, timedelta
-from dataclasses import dataclass
+
 import logging
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Hypothesis:
     """Represents a threat hunting hypothesis"""
+
     text: str
     confidence: float
     evidence: List[Dict]
@@ -20,6 +22,7 @@ class Hypothesis:
 @dataclass
 class BiasIndicator:
     """Indicates potential cognitive bias in analysis"""
+
     bias_type: str
     severity: float
     description: str
@@ -31,8 +34,8 @@ class BiasDetector:
 
     def detect_confirmation_bias(self, evidence: Dict) -> bool:
         """Detects if analyst is only seeking confirming evidence"""
-        positive_indicators = evidence.get('positive_indicators', [])
-        negative_indicators = evidence.get('negative_indicators', [])
+        positive_indicators = evidence.get("positive_indicators", [])
+        negative_indicators = evidence.get("negative_indicators", [])
 
         # Confirmation bias if only positive evidence considered
         if len(positive_indicators) > 0 and len(negative_indicators) == 0:
@@ -67,24 +70,23 @@ class ThreatHunterCognition:
     def __init__(self):
         self.hypothesis_confidence_threshold = 0.7
         self.hunt_stop_criteria = {
-            'coverage_achieved': 0.8,
-            'diminishing_returns': True,
-            'time_limit_hours': 4,
-            'confidence_threshold': 0.9
+            "coverage_achieved": 0.8,
+            "diminishing_returns": True,
+            "time_limit_hours": 4,
+            "confidence_threshold": 0.9,
         }
         self.bias_mitigation = BiasDetector()
         self.pyramid_of_pain_weights = {
-            'hash_values': 0.1,
-            'ip_addresses': 0.2,
-            'domain_names': 0.3,
-            'network_artifacts': 0.4,
-            'host_artifacts': 0.5,
-            'tools': 0.7,
-            'ttps': 1.0
+            "hash_values": 0.1,
+            "ip_addresses": 0.2,
+            "domain_names": 0.3,
+            "network_artifacts": 0.4,
+            "host_artifacts": 0.5,
+            "tools": 0.7,
+            "ttps": 1.0,
         }
 
-    async def generate_competing_hypotheses(self, initial_hypothesis: str,
-                                          context: Dict) -> List[Hypothesis]:
+    async def generate_competing_hypotheses(self, initial_hypothesis: str, context: Dict) -> List[Hypothesis]:
         """
         Forces consideration of alternative explanations using
         Analysis of Competing Hypotheses (ACH)
@@ -93,73 +95,64 @@ class ThreatHunterCognition:
 
         # Generate benign explanation
         benign = self._generate_benign_explanation(initial_hypothesis, context)
-        alternatives.append(Hypothesis(
-            text=benign,
-            confidence=0.3,
-            evidence=[],
-            alternative_explanations=[],
-            created_at=datetime.utcnow()
-        ))
+        alternatives.append(
+            Hypothesis(
+                text=benign, confidence=0.3, evidence=[], alternative_explanations=[], created_at=datetime.utcnow()
+            )
+        )
 
         # Generate insider threat hypothesis
         insider = self._generate_insider_hypothesis(initial_hypothesis, context)
-        alternatives.append(Hypothesis(
-            text=insider,
-            confidence=0.4,
-            evidence=[],
-            alternative_explanations=[],
-            created_at=datetime.utcnow()
-        ))
+        alternatives.append(
+            Hypothesis(
+                text=insider, confidence=0.4, evidence=[], alternative_explanations=[], created_at=datetime.utcnow()
+            )
+        )
 
         # Generate external threat hypothesis
         external = self._generate_external_hypothesis(initial_hypothesis, context)
-        alternatives.append(Hypothesis(
-            text=external,
-            confidence=0.5,
-            evidence=[],
-            alternative_explanations=[],
-            created_at=datetime.utcnow()
-        ))
+        alternatives.append(
+            Hypothesis(
+                text=external, confidence=0.5, evidence=[], alternative_explanations=[], created_at=datetime.utcnow()
+            )
+        )
 
         # Generate supply chain hypothesis
         supply_chain = self._generate_supply_chain_hypothesis(initial_hypothesis, context)
-        alternatives.append(Hypothesis(
-            text=supply_chain,
-            confidence=0.3,
-            evidence=[],
-            alternative_explanations=[],
-            created_at=datetime.utcnow()
-        ))
+        alternatives.append(
+            Hypothesis(
+                text=supply_chain,
+                confidence=0.3,
+                evidence=[],
+                alternative_explanations=[],
+                created_at=datetime.utcnow(),
+            )
+        )
 
         return self._rank_hypotheses_by_evidence(alternatives, context)
 
-    async def assess_hunt_confidence(self, evidence: Dict,
-                                    hypothesis: str) -> Dict[str, float]:
+    async def assess_hunt_confidence(self, evidence: Dict, hypothesis: str) -> Dict[str, float]:
         """Calculates confidence score accounting for biases"""
         confidence_factors = {}
 
         # Check for confirmation bias
         has_confirmation_bias = self.bias_mitigation.detect_confirmation_bias(evidence)
         if has_confirmation_bias:
-            confidence_factors['confirmation_bias_penalty'] = -0.2
+            confidence_factors["confirmation_bias_penalty"] = -0.2
         else:
-            confidence_factors['confirmation_bias_penalty'] = 0.0
+            confidence_factors["confirmation_bias_penalty"] = 0.0
 
         # Weight evidence by pyramid of pain level
         weighted_score = self._weight_by_pyramid_level(evidence)
-        confidence_factors['pyramid_weighted_score'] = weighted_score
+        confidence_factors["pyramid_weighted_score"] = weighted_score
 
         # Consider negative evidence (what we didn't find)
         absence_factor = self._evaluate_absence_of_expected_indicators(evidence)
-        confidence_factors['absence_factor'] = absence_factor
+        confidence_factors["absence_factor"] = absence_factor
 
         # Calculate final confidence
-        final_confidence = self._calculate_final_confidence(
-            weighted_score,
-            absence_factor,
-            has_confirmation_bias
-        )
-        confidence_factors['final_confidence'] = final_confidence
+        final_confidence = self._calculate_final_confidence(weighted_score, absence_factor, has_confirmation_bias)
+        confidence_factors["final_confidence"] = final_confidence
 
         return confidence_factors
 
@@ -168,63 +161,67 @@ class ThreatHunterCognition:
         stop_reasons = {}
 
         # Check coverage achieved
-        coverage = hunt_data.get('coverage', 0.0)
-        stop_reasons['coverage_achieved'] = coverage >= self.hunt_stop_criteria['coverage_achieved']
+        coverage = hunt_data.get("coverage", 0.0)
+        stop_reasons["coverage_achieved"] = coverage >= self.hunt_stop_criteria["coverage_achieved"]
 
         # Check for diminishing returns
-        recent_findings = hunt_data.get('recent_findings', [])
+        recent_findings = hunt_data.get("recent_findings", [])
         if len(recent_findings) > 5:
             # If last 5 iterations found nothing new
-            new_findings = [f for f in recent_findings[-5:] if f.get('is_new', False)]
-            stop_reasons['diminishing_returns'] = len(new_findings) == 0
+            new_findings = [f for f in recent_findings[-5:] if f.get("is_new", False)]
+            stop_reasons["diminishing_returns"] = len(new_findings) == 0
         else:
-            stop_reasons['diminishing_returns'] = False
+            stop_reasons["diminishing_returns"] = False
 
         # Check time limit
-        hunt_duration = hunt_data.get('duration_hours', 0)
-        stop_reasons['time_limit_exceeded'] = hunt_duration >= self.hunt_stop_criteria['time_limit_hours']
+        hunt_duration = hunt_data.get("duration_hours", 0)
+        stop_reasons["time_limit_exceeded"] = hunt_duration >= self.hunt_stop_criteria["time_limit_hours"]
 
         # Check confidence threshold
-        confidence = hunt_data.get('confidence', 0.0)
-        stop_reasons['high_confidence_achieved'] = confidence >= self.hunt_stop_criteria['confidence_threshold']
+        confidence = hunt_data.get("confidence", 0.0)
+        stop_reasons["high_confidence_achieved"] = confidence >= self.hunt_stop_criteria["confidence_threshold"]
 
         # Overall decision
-        stop_reasons['should_stop'] = any([
-            stop_reasons['coverage_achieved'],
-            stop_reasons['diminishing_returns'],
-            stop_reasons['time_limit_exceeded'],
-            stop_reasons['high_confidence_achieved']
-        ])
+        stop_reasons["should_stop"] = any(
+            [
+                stop_reasons["coverage_achieved"],
+                stop_reasons["diminishing_returns"],
+                stop_reasons["time_limit_exceeded"],
+                stop_reasons["high_confidence_achieved"],
+            ]
+        )
 
         return stop_reasons
 
     def _generate_benign_explanation(self, hypothesis: str, context: Dict) -> str:
         """Generates a benign alternative explanation"""
-        if 'lateral movement' in hypothesis.lower():
+        if "lateral movement" in hypothesis.lower():
             return "Administrative activity: IT staff performing legitimate system maintenance"
-        elif 'credential access' in hypothesis.lower():
+        elif "credential access" in hypothesis.lower():
             return "Authorized security tool: Legitimate credential manager or password vault access"
-        elif 'persistence' in hypothesis.lower():
+        elif "persistence" in hypothesis.lower():
             return "Software update: Legitimate application creating scheduled tasks for updates"
-        elif 'exfiltration' in hypothesis.lower():
+        elif "exfiltration" in hypothesis.lower():
             return "Backup operation: Scheduled data backup to cloud storage"
         else:
             return "Normal business operations: Legitimate user activity within expected parameters"
 
     def _generate_insider_hypothesis(self, hypothesis: str, context: Dict) -> str:
         """Generates insider threat hypothesis"""
-        return f"Insider threat scenario: Authorized user with legitimate access performing malicious activity related to {hypothesis.lower()}"
+        return f"Insider threat scenario: Authorized user with legitimate access performing malicious activity related to {
+            hypothesis.lower()}"
 
     def _generate_external_hypothesis(self, hypothesis: str, context: Dict) -> str:
         """Generates external threat hypothesis"""
-        return f"External threat actor: Unauthorized access via compromised credentials or vulnerability exploitation for {hypothesis.lower()}"
+        return f"External threat actor: Unauthorized access via compromised credentials or vulnerability exploitation for {
+            hypothesis.lower()}"
 
     def _generate_supply_chain_hypothesis(self, hypothesis: str, context: Dict) -> str:
         """Generates supply chain compromise hypothesis"""
-        return f"Supply chain compromise: Trusted third-party software or vendor access being abused for {hypothesis.lower()}"
+        return f"Supply chain compromise: Trusted third-party software or vendor access being abused for {
+            hypothesis.lower()}"
 
-    def _rank_hypotheses_by_evidence(self, hypotheses: List[Hypothesis],
-                                    context: Dict) -> List[Hypothesis]:
+    def _rank_hypotheses_by_evidence(self, hypotheses: List[Hypothesis], context: Dict) -> List[Hypothesis]:
         """Ranks hypotheses based on available evidence"""
         # In production, this would use actual evidence matching
         # For now, return sorted by initial confidence
@@ -251,8 +248,8 @@ class ThreatHunterCognition:
         Evaluates the significance of expected indicators that were NOT found.
         Absence of evidence can be evidence of absence in some cases.
         """
-        expected_indicators = evidence.get('expected_indicators', [])
-        found_indicators = evidence.get('found_indicators', [])
+        expected_indicators = evidence.get("expected_indicators", [])
+        found_indicators = evidence.get("found_indicators", [])
 
         if not expected_indicators:
             return 0.0
@@ -264,9 +261,9 @@ class ThreatHunterCognition:
         # High absence ratio lowers confidence
         return -0.3 * absence_ratio
 
-    def _calculate_final_confidence(self, weighted_score: float,
-                                   absence_factor: float,
-                                   has_confirmation_bias: bool) -> float:
+    def _calculate_final_confidence(
+        self, weighted_score: float, absence_factor: float, has_confirmation_bias: bool
+    ) -> float:
         """Calculates final confidence score"""
         base_confidence = weighted_score
 
@@ -280,8 +277,7 @@ class ThreatHunterCognition:
         # Clamp between 0 and 1
         return max(0.0, min(1.0, base_confidence))
 
-    def generate_investigation_questions(self, hypothesis: str,
-                                        evidence: Dict) -> List[str]:
+    def generate_investigation_questions(self, hypothesis: str, evidence: Dict) -> List[str]:
         """
         Generates investigative questions to avoid tunnel vision
         and ensure thorough analysis
@@ -301,10 +297,10 @@ class ThreatHunterCognition:
         questions.append("How would an adversary try to evade this detection?")
 
         # Contextual questions
-        if evidence.get('ttps'):
+        if evidence.get("ttps"):
             questions.append("Are these TTPs consistent with known threat actors in our industry?")
 
-        if evidence.get('tools'):
+        if evidence.get("tools"):
             questions.append("Could these tools be used for legitimate purposes?")
 
         questions.append("Have we consulted with system owners about normal behavior?")

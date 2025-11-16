@@ -4,11 +4,11 @@ Community-driven threat hunting initiative
 
 Integrates HEARTH (community hunt repository) and thrunting philosophy
 """
-from typing import Dict, List, Optional
+
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-import logging
-import yaml
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +16,14 @@ logger = logging.getLogger(__name__)
 @dataclass
 class HEARTHHunt:
     """Represents a HEARTH community hunt submission"""
+
     hunt_id: str  # H-001 (Hypothesis), B-002 (Baseline), M-003 (Model-Assisted)
     hunt_type: str  # Hypothesis-Driven, Baseline, Model-Assisted
     title: str
     hypothesis: str
     data_sources: List[str]
-    queries: Dict[str, str]  # Platform: Query mapping (splunk, kql, elastic, etc.)
+    # Platform: Query mapping (splunk, kql, elastic, etc.)
+    queries: Dict[str, str]
     peak_phase: str  # Prepare, Execute, Act
     contributor: str
     tags: List[str]
@@ -41,20 +43,20 @@ class ThreatHuntingRelevancyFactors:
 
         # Core THRF factors (always considered)
         self.core_factors = {
-            'industry_vertical': 0.25,
-            'geographic_region': 0.15,
-            'technology_stack': 0.30,
-            'threat_intelligence': 0.20,
-            'attack_surface': 0.10
+            "industry_vertical": 0.25,
+            "geographic_region": 0.15,
+            "technology_stack": 0.30,
+            "threat_intelligence": 0.20,
+            "attack_surface": 0.10,
         }
 
         # Advanced THRF factors
         self.advanced_factors = {
-            'regulatory_compliance': 0.15,
-            'supply_chain': 0.10,
-            'historical_incidents': 0.20,
-            'peer_organizations': 0.10,
-            'business_criticality': 0.25
+            "regulatory_compliance": 0.15,
+            "supply_chain": 0.10,
+            "historical_incidents": 0.20,
+            "peer_organizations": 0.10,
+            "business_criticality": 0.25,
         }
 
     def calculate_hunt_relevancy(self, hunt: HEARTHHunt) -> Dict:
@@ -67,44 +69,44 @@ class ThreatHuntingRelevancyFactors:
 
         # Industry vertical relevancy
         industry_score = self._assess_industry_relevance(hunt)
-        relevancy_score += industry_score * self.core_factors['industry_vertical']
-        factor_breakdown['industry'] = industry_score
+        relevancy_score += industry_score * self.core_factors["industry_vertical"]
+        factor_breakdown["industry"] = industry_score
 
         # Geographic region relevancy
         geo_score = self._assess_geographic_relevance(hunt)
-        relevancy_score += geo_score * self.core_factors['geographic_region']
-        factor_breakdown['geography'] = geo_score
+        relevancy_score += geo_score * self.core_factors["geographic_region"]
+        factor_breakdown["geography"] = geo_score
 
         # Technology stack relevancy
         tech_score = self._assess_tech_relevance(hunt)
-        relevancy_score += tech_score * self.core_factors['technology_stack']
-        factor_breakdown['technology'] = tech_score
+        relevancy_score += tech_score * self.core_factors["technology_stack"]
+        factor_breakdown["technology"] = tech_score
 
         # Threat intelligence relevancy
         cti_score = self._assess_cti_relevance(hunt)
-        relevancy_score += cti_score * self.core_factors['threat_intelligence']
-        factor_breakdown['threat_intel'] = cti_score
+        relevancy_score += cti_score * self.core_factors["threat_intelligence"]
+        factor_breakdown["threat_intel"] = cti_score
 
         # Attack surface relevancy
         surface_score = self._assess_attack_surface_relevance(hunt)
-        relevancy_score += surface_score * self.core_factors['attack_surface']
-        factor_breakdown['attack_surface'] = surface_score
+        relevancy_score += surface_score * self.core_factors["attack_surface"]
+        factor_breakdown["attack_surface"] = surface_score
 
         return {
-            'total_score': min(1.0, relevancy_score),
-            'factor_breakdown': factor_breakdown,
-            'recommendation': self._get_recommendation(relevancy_score),
-            'reasoning': self._explain_score(factor_breakdown)
+            "total_score": min(1.0, relevancy_score),
+            "factor_breakdown": factor_breakdown,
+            "recommendation": self._get_recommendation(relevancy_score),
+            "reasoning": self._explain_score(factor_breakdown),
         }
 
     def _assess_industry_relevance(self, hunt: HEARTHHunt) -> float:
         """Your business model shapes your threat model"""
-        org_industry = self.profile.get('industry', '').lower()
-        hunt_industries = [i.lower() for i in hunt.relevancy_factors.get('industries', [])]
+        org_industry = self.profile.get("industry", "").lower()
+        hunt_industries = [i.lower() for i in hunt.relevancy_factors.get("industries", [])]
 
         if org_industry in hunt_industries:
             return 1.0  # Direct match
-        elif 'all' in hunt_industries or 'any' in hunt_industries:
+        elif "all" in hunt_industries or "any" in hunt_industries:
             return 0.6  # Generic hunt
         elif self._is_related_industry(org_industry, hunt_industries):
             return 0.7  # Related industry
@@ -112,18 +114,18 @@ class ThreatHuntingRelevancyFactors:
 
     def _assess_geographic_relevance(self, hunt: HEARTHHunt) -> float:
         """Regional threats matter for your geography"""
-        org_regions = [r.lower() for r in self.profile.get('regions', [])]
-        hunt_regions = [r.lower() for r in hunt.relevancy_factors.get('regions', [])]
+        org_regions = [r.lower() for r in self.profile.get("regions", [])]
+        hunt_regions = [r.lower() for r in hunt.relevancy_factors.get("regions", [])]
 
         if set(org_regions).intersection(hunt_regions):
             return 1.0
-        elif 'global' in hunt_regions or 'worldwide' in hunt_regions:
+        elif "global" in hunt_regions or "worldwide" in hunt_regions:
             return 0.7
         return 0.3
 
     def _assess_tech_relevance(self, hunt: HEARTHHunt) -> float:
         """Focus on platforms that exist in your environment"""
-        org_tech = self.profile.get('technology_stack', {})
+        org_tech = self.profile.get("technology_stack", {})
         required_sources = hunt.data_sources
 
         available_count = 0
@@ -138,11 +140,11 @@ class ThreatHuntingRelevancyFactors:
 
     def _assess_cti_relevance(self, hunt: HEARTHHunt) -> float:
         """Align with current threat intelligence"""
-        org_threats = self.profile.get('active_threats', [])
+        org_threats = self.profile.get("active_threats", [])
         hunt_tags = hunt.tags
 
         # Check for MITRE ATT&CK technique matches
-        technique_matches = sum(1 for tag in hunt_tags if tag.startswith('T') and tag in org_threats)
+        technique_matches = sum(1 for tag in hunt_tags if tag.startswith("T") and tag in org_threats)
 
         if technique_matches > 0:
             return min(1.0, technique_matches * 0.3)
@@ -151,23 +153,22 @@ class ThreatHuntingRelevancyFactors:
 
     def _assess_attack_surface_relevance(self, hunt: HEARTHHunt) -> float:
         """Match hunt to your actual attack surface"""
-        attack_surface = self.profile.get('attack_surface', [])
+        attack_surface = self.profile.get("attack_surface", [])
 
         # Map hunt to attack surface components
         surface_components = {
-            'web': ['web', 'http', 'browser'],
-            'email': ['email', 'phishing', 'smtp'],
-            'endpoint': ['endpoint', 'workstation', 'desktop'],
-            'cloud': ['aws', 'azure', 'gcp', 'cloud'],
-            'network': ['network', 'dns', 'firewall']
+            "web": ["web", "http", "browser"],
+            "email": ["email", "phishing", "smtp"],
+            "endpoint": ["endpoint", "workstation", "desktop"],
+            "cloud": ["aws", "azure", "gcp", "cloud"],
+            "network": ["network", "dns", "firewall"],
         }
 
         matches = 0
         for surface in attack_surface:
             for component, keywords in surface_components.items():
                 if surface.lower() == component:
-                    if any(kw in hunt.title.lower() or kw in hunt.hypothesis.lower()
-                          for kw in keywords):
+                    if any(kw in hunt.title.lower() or kw in hunt.hypothesis.lower() for kw in keywords):
                         matches += 1
 
         return min(1.0, matches * 0.4)
@@ -190,11 +191,11 @@ class ThreatHuntingRelevancyFactors:
     def _is_related_industry(self, org_industry: str, hunt_industries: List[str]) -> bool:
         """Check if industries are related"""
         industry_groups = {
-            'financial': ['banking', 'fintech', 'insurance', 'payments'],
-            'healthcare': ['hospital', 'pharma', 'medical', 'health'],
-            'technology': ['software', 'saas', 'tech', 'it'],
-            'retail': ['ecommerce', 'retail', 'shopping'],
-            'government': ['federal', 'state', 'local', 'public sector']
+            "financial": ["banking", "fintech", "insurance", "payments"],
+            "healthcare": ["hospital", "pharma", "medical", "health"],
+            "technology": ["software", "saas", "tech", "it"],
+            "retail": ["ecommerce", "retail", "shopping"],
+            "government": ["federal", "state", "local", "public sector"],
         }
 
         for group, industries in industry_groups.items():
@@ -240,25 +241,25 @@ class ThruntingPhilosophy:
             "Stop chasing ghosts - validate your detections",
             "Purpose doesn't kill creativity - THRF makes hunts matter",
             "Think like an adversary, act like a scientist",
-            "Community over competition - share your findings"
+            "Community over competition - share your findings",
         ]
 
         self.peak_wisdom = {
-            'prepare': [
+            "prepare": [
                 "Research the adversary TTPs first",
                 "Understand your data sources and their limitations",
-                "Frame specific, testable hypotheses"
+                "Frame specific, testable hypotheses",
             ],
-            'execute': [
+            "execute": [
                 "Follow the data, not your assumptions",
                 "Use eventstats for dynamic baselines",
-                "Look for statistical outliers (2+ standard deviations)"
+                "Look for statistical outliers (2+ standard deviations)",
             ],
-            'act': [
+            "act": [
                 "Document everything - future you will thank present you",
                 "Create detections from validated findings",
-                "Share back to the community via HEARTH"
-            ]
+                "Share back to the community via HEARTH",
+            ],
         }
 
         self.spl_tricks = self._load_spl_dispatch_tricks()
@@ -270,41 +271,51 @@ class ThruntingPhilosophy:
 
         # Check hypothesis quality
         if not self._has_clear_hypothesis(hunt_hypothesis):
-            improvements.append({
-                'issue': 'Vague hypothesis',
-                'principle': self.thrunting_principles[0],
-                'suggestion': 'Be specific: WHO is doing WHAT using WHICH technique',
-                'example': 'APT29 will use WMI for lateral movement to domain controllers'
-            })
+            improvements.append(
+                {
+                    "issue": "Vague hypothesis",
+                    "principle": self.thrunting_principles[0],
+                    "suggestion": "Be specific: WHO is doing WHAT using WHICH technique",
+                    "example": "APT29 will use WMI for lateral movement to domain controllers",
+                }
+            )
         else:
             wisdom_applied.append("Clear, testable hypothesis ✓")
 
         # Check for baseline consideration
-        if hunt_type == 'Hypothesis-Driven':
-            if 'normal' not in hunt_hypothesis.lower() and 'baseline' not in hunt_hypothesis.lower():
-                improvements.append({
-                    'issue': 'No baseline reference',
-                    'principle': self.thrunting_principles[1],
-                    'suggestion': 'Consider what normal looks like first',
-                    'technique': 'Use eventstats to calculate baseline in-query'
-                })
-        elif hunt_type == 'Baseline':
+        if hunt_type == "Hypothesis-Driven":
+            if "normal" not in hunt_hypothesis.lower() and "baseline" not in hunt_hypothesis.lower():
+                improvements.append(
+                    {
+                        "issue": "No baseline reference",
+                        "principle": self.thrunting_principles[1],
+                        "suggestion": "Consider what normal looks like first",
+                        "technique": "Use eventstats to calculate baseline in-query",
+                    }
+                )
+        elif hunt_type == "Baseline":
             wisdom_applied.append("Baseline hunt - establishing normal ✓")
 
         # Check for specificity
-        vague_terms = ['something', 'anything', 'stuff', 'things', 'activities']
+        vague_terms = ["something", "anything", "stuff", "things", "activities"]
         if any(term in hunt_hypothesis.lower() for term in vague_terms):
-            improvements.append({
-                'issue': 'Vague terminology',
-                'principle': "Be precise in your language",
-                'suggestion': 'Replace vague terms with specific techniques or indicators'
-            })
+            improvements.append(
+                {
+                    "issue": "Vague terminology",
+                    "principle": "Be precise in your language",
+                    "suggestion": "Replace vague terms with specific techniques or indicators",
+                }
+            )
 
         return {
-            'improvements': improvements,
-            'wisdom_applied': wisdom_applied,
-            'thrunting_score': len(wisdom_applied) / (len(wisdom_applied) + len(improvements)) if (wisdom_applied or improvements) else 0.5,
-            'principles_to_remember': self.thrunting_principles[:3]
+            "improvements": improvements,
+            "wisdom_applied": wisdom_applied,
+            "thrunting_score": (
+                len(wisdom_applied) / (len(wisdom_applied) + len(improvements))
+                if (wisdom_applied or improvements)
+                else 0.5
+            ),
+            "principles_to_remember": self.thrunting_principles[:3],
         }
 
     def optimize_spl_query(self, query: str) -> Dict:
@@ -313,39 +324,35 @@ class ThruntingPhilosophy:
         optimizations_applied = []
 
         # Add eventstats for dynamic baselining
-        if 'stats' in query and 'eventstats' not in query and 'by _time' not in query:
+        if "stats" in query and "eventstats" not in query and "by _time" not in query:
             # This is a favorite THOR Collective technique
-            if '| stats count' in query:
+            if "| stats count" in query:
                 optimized = optimized.replace(
-                    '| stats count',
-                    '| eventstats avg(count) as baseline_count | stats count'
+                    "| stats count", "| eventstats avg(count) as baseline_count | stats count"
                 )
                 optimizations_applied.append("Added eventstats for dynamic baseline")
 
         # Add automatic anomaly detection
-        if '| stats count' in query and 'where count >' not in query:
-            optimized += '\n| where count > (baseline_count * 2)'
+        if "| stats count" in query and "where count >" not in query:
+            optimized += "\n| where count > (baseline_count * 2)"
             optimizations_applied.append("Added 2x baseline anomaly threshold")
 
         # Add time bucketing if missing
-        if 'by _time' in query and 'bucket' not in query and 'bin' not in query:
-            optimized = optimized.replace(
-                'by _time',
-                'by _time span=1h'
-            )
+        if "by _time" in query and "bucket" not in query and "bin" not in query:
+            optimized = optimized.replace("by _time", "by _time span=1h")
             optimizations_applied.append("Added time bucketing")
 
         return {
-            'original': query,
-            'optimized': optimized,
-            'optimizations': optimizations_applied,
-            'dispatch_wisdom': "Use eventstats for dynamic baselines - it's faster and more accurate"
+            "original": query,
+            "optimized": optimized,
+            "optimizations": optimizations_applied,
+            "dispatch_wisdom": "Use eventstats for dynamic baselines - it's faster and more accurate",
         }
 
     def _has_clear_hypothesis(self, hypothesis: str) -> bool:
         """Check if hypothesis is clear and testable"""
         # Good hypotheses typically have WHO, WHAT, HOW
-        indicators = ['will', 'using', 'to', 'via', 'through']
+        indicators = ["will", "using", "to", "via", "through"]
 
         return any(indicator in hypothesis.lower() for indicator in indicators)
 
@@ -353,20 +360,20 @@ class ThruntingPhilosophy:
         """Load SPL tricks from Dispatch newsletter"""
         return [
             {
-                'trick': 'eventstats for baselines',
-                'description': 'Calculate baselines without subsearches',
-                'example': '| eventstats avg(count) as avg_count, stdev(count) as stdev_count by user'
+                "trick": "eventstats for baselines",
+                "description": "Calculate baselines without subsearches",
+                "example": "| eventstats avg(count) as avg_count, stdev(count) as stdev_count by user",
             },
             {
-                'trick': 'statistical outliers',
-                'description': 'Find anomalies using 2+ standard deviations',
-                'example': '| where count > (avg_count + 2*stdev_count)'
+                "trick": "statistical outliers",
+                "description": "Find anomalies using 2+ standard deviations",
+                "example": "| where count > (avg_count + 2*stdev_count)",
             },
             {
-                'trick': 'streamstats for sequences',
-                'description': 'Track sequences of events',
-                'example': '| streamstats count by user | where count > 5'
-            }
+                "trick": "streamstats for sequences",
+                "description": "Track sequences of events",
+                "example": "| streamstats count by user | where count > 5",
+            },
         ]
 
 
@@ -398,24 +405,21 @@ class THORCollectiveIntegration:
 
         # Apply filters if provided
         if filters:
-            if 'hunt_type' in filters:
-                hunts = [h for h in hunts if h.hunt_type == filters['hunt_type']]
-            if 'tags' in filters:
-                hunts = [h for h in hunts if any(tag in h.tags for tag in filters['tags'])]
-            if 'peak_phase' in filters:
-                hunts = [h for h in hunts if h.peak_phase == filters['peak_phase']]
+            if "hunt_type" in filters:
+                hunts = [h for h in hunts if h.hunt_type == filters["hunt_type"]]
+            if "tags" in filters:
+                hunts = [h for h in hunts if any(tag in h.tags for tag in filters["tags"])]
+            if "peak_phase" in filters:
+                hunts = [h for h in hunts if h.peak_phase == filters["peak_phase"]]
 
         # Calculate THRF relevancy for each hunt
         hunt_scores = []
         for hunt in hunts:
             relevancy = self.thrf.calculate_hunt_relevancy(hunt)
-            hunt_scores.append({
-                'hunt': hunt,
-                'relevancy': relevancy
-            })
+            hunt_scores.append({"hunt": hunt, "relevancy": relevancy})
 
         # Sort by relevancy score
-        hunt_scores.sort(key=lambda x: x['relevancy']['total_score'], reverse=True)
+        hunt_scores.sort(key=lambda x: x["relevancy"]["total_score"], reverse=True)
 
         return hunt_scores
 
@@ -423,16 +427,16 @@ class THORCollectiveIntegration:
         """Apply thrunting wisdom to validate hunt quality"""
         return self.thrunting.apply_thrunting_wisdom(hypothesis, hunt_type)
 
-    def optimize_query(self, query: str, platform: str = 'splunk') -> Dict:
+    def optimize_query(self, query: str, platform: str = "splunk") -> Dict:
         """Optimize query using THOR Collective techniques"""
-        if platform.lower() == 'splunk' or 'index=' in query:
+        if platform.lower() == "splunk" or "index=" in query:
             return self.thrunting.optimize_spl_query(query)
         else:
             return {
-                'original': query,
-                'optimized': query,
-                'optimizations': [],
-                'note': f'Optimizations currently available for Splunk SPL only'
+                "original": query,
+                "optimized": query,
+                "optimizations": [],
+                "note": f"Optimizations currently available for Splunk SPL only",
             }
 
     def _load_hearth_hunts(self) -> Dict[str, HEARTHHunt]:
@@ -463,7 +467,7 @@ DeviceProcessEvents
 | where FileName in~ ("cmd.exe", "powershell.exe", "wscript.exe")
 | summarize count() by InitiatingProcessCommandLine, FileName, DeviceName
 | where count_ > 2
-                    """.strip()
+                    """.strip(),
                 },
                 peak_phase="Execute",
                 contributor="thor_collective",
@@ -471,10 +475,9 @@ DeviceProcessEvents
                 relevancy_factors={
                     "industries": ["all"],
                     "regions": ["global"],
-                    "tech_stack": ["chrome", "firefox", "edge", "endpoints"]
-                }
+                    "tech_stack": ["chrome", "firefox", "edge", "endpoints"],
+                },
             ),
-
             HEARTHHunt(
                 hunt_id="B-001",
                 hunt_type="Baseline",
@@ -496,13 +499,8 @@ index=dns
                 peak_phase="Prepare",
                 contributor="thor_collective",
                 tags=["baseline", "dns", "beaconing", "c2", "T1071"],
-                relevancy_factors={
-                    "industries": ["all"],
-                    "regions": ["global"],
-                    "tech_stack": ["dns", "network"]
-                }
+                relevancy_factors={"industries": ["all"], "regions": ["global"], "tech_stack": ["dns", "network"]},
             ),
-
             HEARTHHunt(
                 hunt_id="M-001",
                 hunt_type="Model-Assisted",
@@ -535,9 +533,9 @@ lateral_movement_candidates = df[df['cluster'] == -1]
                 relevancy_factors={
                     "industries": ["all"],
                     "regions": ["global"],
-                    "tech_stack": ["python", "scikit-learn", "authentication_logs"]
-                }
-            )
+                    "tech_stack": ["python", "scikit-learn", "authentication_logs"],
+                },
+            ),
         ]
 
         for hunt in example_hunts:
@@ -548,16 +546,16 @@ lateral_movement_candidates = df[df['cluster'] == -1]
     def _default_profile(self) -> Dict:
         """Default organization profile for THRF"""
         return {
-            'industry': 'technology',
-            'regions': ['north_america'],
-            'technology_stack': {
-                'endpoints': ['windows', 'macos', 'linux'],
-                'siem': ['splunk'],
-                'cloud': ['aws'],
-                'data_sources': ['endpoint_logs', 'network_logs', 'dns_logs', 'authentication_logs']
+            "industry": "technology",
+            "regions": ["north_america"],
+            "technology_stack": {
+                "endpoints": ["windows", "macos", "linux"],
+                "siem": ["splunk"],
+                "cloud": ["aws"],
+                "data_sources": ["endpoint_logs", "network_logs", "dns_logs", "authentication_logs"],
             },
-            'attack_surface': ['web', 'email', 'endpoint', 'cloud'],
-            'active_threats': []
+            "attack_surface": ["web", "email", "endpoint", "cloud"],
+            "active_threats": [],
         }
 
     def get_thrunting_mentor_advice(self, question: str) -> str:
@@ -566,7 +564,7 @@ lateral_movement_candidates = df[df['cluster'] == -1]
         advice += f"**Your Question**: {question}\n\n"
 
         # Context-specific advice
-        if 'baseline' in question.lower():
+        if "baseline" in question.lower():
             advice += """
 ## Baselining Like a Pro
 
@@ -582,7 +580,7 @@ Example pattern:
 | eval is_anomaly=if(count > (avg_count + 2*stdev_count), 1, 0)
 ```
 """
-        elif 'hypothesis' in question.lower():
+        elif "hypothesis" in question.lower():
             advice += """
 ## Crafting Better Hypotheses
 
@@ -600,7 +598,7 @@ Make it:
 - **Linked**: Connect to MITRE ATT&CK when possible
 - **Relevant**: Apply THRF - does this matter to YOUR org?
 """
-        elif 'query' in question.lower() or 'spl' in question.lower():
+        elif "query" in question.lower() or "spl" in question.lower():
             advice += """
 ## SPL Query Optimization
 

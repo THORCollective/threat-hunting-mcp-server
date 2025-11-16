@@ -1,9 +1,10 @@
 """Graph-based threat detection and correlation engine"""
-from typing import Dict, List, Optional, Set, Tuple
-from dataclasses import dataclass, field
-from datetime import datetime
-from collections import defaultdict
+
 import logging
+from collections import defaultdict
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EntityNode:
     """Represents an entity in the attack graph"""
+
     entity_id: str
     entity_type: str  # process, user, host, file, network_connection
     properties: Dict
@@ -22,6 +24,7 @@ class EntityNode:
 @dataclass
 class RelationshipEdge:
     """Represents a relationship between entities"""
+
     source_id: str
     target_id: str
     relationship_type: str  # created, accessed, connected_to, executed
@@ -32,6 +35,7 @@ class RelationshipEdge:
 @dataclass
 class AttackPath:
     """Represents a potential attack path through the graph"""
+
     path_id: str
     nodes: List[EntityNode]
     edges: List[RelationshipEdge]
@@ -62,8 +66,7 @@ class AttackGraph:
         neighbor_ids = self.adjacency.get(entity_id, [])
         return [self.nodes[nid] for nid in neighbor_ids if nid in self.nodes]
 
-    def find_paths(self, start_id: str, end_id: str,
-                   max_depth: int = 10) -> List[List[str]]:
+    def find_paths(self, start_id: str, end_id: str, max_depth: int = 10) -> List[List[str]]:
         """Finds all paths between two entities"""
         paths = []
         visited = set()
@@ -148,37 +151,42 @@ class GraphCorrelationEngine:
 
         # Check for unusual parent-child relationships
         if self._is_suspicious_parent(process_tree):
-            suspicious_patterns.append({
-                'type': 'unexpected_child_process',
-                'confidence': self._calculate_lol_confidence(process_tree),
-                'parent': process_tree.get('parent_process'),
-                'child': process_tree.get('process_name'),
-                'explanation': 'Unusual parent-child process relationship detected'
-            })
+            suspicious_patterns.append(
+                {
+                    "type": "unexpected_child_process",
+                    "confidence": self._calculate_lol_confidence(process_tree),
+                    "parent": process_tree.get("parent_process"),
+                    "child": process_tree.get("process_name"),
+                    "explanation": "Unusual parent-child process relationship detected",
+                }
+            )
 
         # Detect rapid sequential LOLBin execution
         if self._detect_lolbin_chain(process_tree):
-            suspicious_patterns.append({
-                'type': 'lolbin_chain',
-                'confidence': 0.8,
-                'tools': self._extract_lolbin_sequence(process_tree),
-                'explanation': 'Multiple living-off-the-land binaries executed in sequence'
-            })
+            suspicious_patterns.append(
+                {
+                    "type": "lolbin_chain",
+                    "confidence": 0.8,
+                    "tools": self._extract_lolbin_sequence(process_tree),
+                    "explanation": "Multiple living-off-the-land binaries executed in sequence",
+                }
+            )
 
         # Detect LOLBin with suspicious command line
         if self._has_suspicious_cmdline(process_tree):
-            suspicious_patterns.append({
-                'type': 'suspicious_lolbin_cmdline',
-                'confidence': 0.7,
-                'process': process_tree.get('process_name'),
-                'cmdline': process_tree.get('command_line'),
-                'explanation': 'LOLBin executed with suspicious command line arguments'
-            })
+            suspicious_patterns.append(
+                {
+                    "type": "suspicious_lolbin_cmdline",
+                    "confidence": 0.7,
+                    "process": process_tree.get("process_name"),
+                    "cmdline": process_tree.get("command_line"),
+                    "explanation": "LOLBin executed with suspicious command line arguments",
+                }
+            )
 
         return suspicious_patterns
 
-    async def find_critical_paths(self, graph: AttackGraph,
-                                 pivot_points: List[str]) -> List[AttackPath]:
+    async def find_critical_paths(self, graph: AttackGraph, pivot_points: List[str]) -> List[AttackPath]:
         """Identifies critical attack paths through the graph"""
         critical_paths = []
 
@@ -189,7 +197,7 @@ class GraphCorrelationEngine:
 
             # Look for high-value targets
             for node_id, node in graph.nodes.items():
-                if node.entity_type in ['domain_controller', 'database', 'admin_account']:
+                if node.entity_type in ["domain_controller", "database", "admin_account"]:
                     paths = graph.find_paths(pivot, node_id)
 
                     for path_ids in paths:
@@ -210,49 +218,50 @@ class GraphCorrelationEngine:
         centrality_scores = self._calculate_betweenness_centrality(graph)
 
         # Sort by centrality
-        sorted_nodes = sorted(centrality_scores.items(),
-                            key=lambda x: x[1], reverse=True)
+        sorted_nodes = sorted(centrality_scores.items(), key=lambda x: x[1], reverse=True)
 
         # Top 10% are potential pivots
         top_count = max(1, len(sorted_nodes) // 10)
         for node_id, score in sorted_nodes[:top_count]:
             node = graph.nodes.get(node_id)
             if node:
-                pivot_nodes.append({
-                    'entity_id': node_id,
-                    'entity_type': node.entity_type,
-                    'centrality_score': score,
-                    'properties': node.properties,
-                    'explanation': 'High betweenness centrality indicates critical pivot point'
-                })
+                pivot_nodes.append(
+                    {
+                        "entity_id": node_id,
+                        "entity_type": node.entity_type,
+                        "centrality_score": score,
+                        "properties": node.properties,
+                        "explanation": "High betweenness centrality indicates critical pivot point",
+                    }
+                )
 
         return pivot_nodes
 
     def _event_to_entity(self, event: Dict) -> Optional[EntityNode]:
         """Converts an event to an entity node"""
-        if 'process_name' in event:
+        if "process_name" in event:
             return EntityNode(
-                entity_id=event.get('process_guid', event.get('process_name')),
-                entity_type='process',
+                entity_id=event.get("process_guid", event.get("process_name")),
+                entity_type="process",
                 properties=event,
-                first_seen=event.get('timestamp', datetime.utcnow()),
-                last_seen=event.get('timestamp', datetime.utcnow())
+                first_seen=event.get("timestamp", datetime.utcnow()),
+                last_seen=event.get("timestamp", datetime.utcnow()),
             )
-        elif 'user_name' in event:
+        elif "user_name" in event:
             return EntityNode(
-                entity_id=event.get('user_name'),
-                entity_type='user',
+                entity_id=event.get("user_name"),
+                entity_type="user",
                 properties=event,
-                first_seen=event.get('timestamp', datetime.utcnow()),
-                last_seen=event.get('timestamp', datetime.utcnow())
+                first_seen=event.get("timestamp", datetime.utcnow()),
+                last_seen=event.get("timestamp", datetime.utcnow()),
             )
-        elif 'host_name' in event:
+        elif "host_name" in event:
             return EntityNode(
-                entity_id=event.get('host_name'),
-                entity_type='host',
+                entity_id=event.get("host_name"),
+                entity_type="host",
                 properties=event,
-                first_seen=event.get('timestamp', datetime.utcnow()),
-                last_seen=event.get('timestamp', datetime.utcnow())
+                first_seen=event.get("timestamp", datetime.utcnow()),
+                last_seen=event.get("timestamp", datetime.utcnow()),
             )
         return None
 
@@ -261,46 +270,50 @@ class GraphCorrelationEngine:
         edges = []
 
         # Process creation relationship
-        if 'parent_process' in event and 'process_name' in event:
-            edges.append(RelationshipEdge(
-                source_id=event.get('parent_process'),
-                target_id=event.get('process_guid', event.get('process_name')),
-                relationship_type='created',
-                timestamp=event.get('timestamp', datetime.utcnow()),
-                properties=event
-            ))
+        if "parent_process" in event and "process_name" in event:
+            edges.append(
+                RelationshipEdge(
+                    source_id=event.get("parent_process"),
+                    target_id=event.get("process_guid", event.get("process_name")),
+                    relationship_type="created",
+                    timestamp=event.get("timestamp", datetime.utcnow()),
+                    properties=event,
+                )
+            )
 
         # Network connection relationship
-        if 'source_ip' in event and 'dest_ip' in event:
-            edges.append(RelationshipEdge(
-                source_id=event.get('source_ip'),
-                target_id=event.get('dest_ip'),
-                relationship_type='connected_to',
-                timestamp=event.get('timestamp', datetime.utcnow()),
-                properties=event
-            ))
+        if "source_ip" in event and "dest_ip" in event:
+            edges.append(
+                RelationshipEdge(
+                    source_id=event.get("source_ip"),
+                    target_id=event.get("dest_ip"),
+                    relationship_type="connected_to",
+                    timestamp=event.get("timestamp", datetime.utcnow()),
+                    properties=event,
+                )
+            )
 
         return edges
 
     def _is_suspicious_parent(self, process_tree: Dict) -> bool:
         """Checks if parent-child relationship is suspicious"""
-        parent = process_tree.get('parent_process', '').lower()
-        child = process_tree.get('process_name', '').lower()
+        parent = process_tree.get("parent_process", "").lower()
+        child = process_tree.get("process_name", "").lower()
 
         # Check against known suspicious relationships
         for suspicious_pair in self.suspicious_parent_child:
-            if suspicious_pair['parent'] in parent and suspicious_pair['child'] in child:
+            if suspicious_pair["parent"] in parent and suspicious_pair["child"] in child:
                 return True
 
         return False
 
     def _detect_lolbin_chain(self, process_tree: Dict) -> bool:
         """Detects chained LOLBin execution"""
-        children = process_tree.get('children', [])
+        children = process_tree.get("children", [])
 
         lolbin_count = 0
         for child in children:
-            child_name = child.get('process_name', '').lower()
+            child_name = child.get("process_name", "").lower()
             if any(lolbin in child_name for lolbin in self.lolbin_signatures):
                 lolbin_count += 1
 
@@ -310,10 +323,10 @@ class GraphCorrelationEngine:
     def _extract_lolbin_sequence(self, process_tree: Dict) -> List[str]:
         """Extracts sequence of LOLBins"""
         sequence = []
-        children = process_tree.get('children', [])
+        children = process_tree.get("children", [])
 
         for child in children:
-            child_name = child.get('process_name', '')
+            child_name = child.get("process_name", "")
             if any(lolbin in child_name.lower() for lolbin in self.lolbin_signatures):
                 sequence.append(child_name)
 
@@ -321,23 +334,22 @@ class GraphCorrelationEngine:
 
     def _has_suspicious_cmdline(self, process_tree: Dict) -> bool:
         """Checks for suspicious command line arguments"""
-        cmdline = process_tree.get('command_line', '').lower()
-        process_name = process_tree.get('process_name', '').lower()
+        cmdline = process_tree.get("command_line", "").lower()
+        process_name = process_tree.get("process_name", "").lower()
 
         # PowerShell obfuscation indicators
-        if 'powershell' in process_name:
-            suspicious_patterns = ['-enc', '-w hidden', '-nop', 'downloadstring',
-                                 'invoke-expression', 'iex', 'bypass']
+        if "powershell" in process_name:
+            suspicious_patterns = ["-enc", "-w hidden", "-nop", "downloadstring", "invoke-expression", "iex", "bypass"]
             return any(pattern in cmdline for pattern in suspicious_patterns)
 
         # WMIC suspicious usage
-        if 'wmic' in process_name:
-            suspicious_patterns = ['process call create', '/node:', 'shadowcopy']
+        if "wmic" in process_name:
+            suspicious_patterns = ["process call create", "/node:", "shadowcopy"]
             return any(pattern in cmdline for pattern in suspicious_patterns)
 
         # Certutil abuse
-        if 'certutil' in process_name:
-            suspicious_patterns = ['-decode', '-urlcache', '-split']
+        if "certutil" in process_name:
+            suspicious_patterns = ["-decode", "-urlcache", "-split"]
             return any(pattern in cmdline for pattern in suspicious_patterns)
 
         return False
@@ -354,13 +366,12 @@ class GraphCorrelationEngine:
             confidence += 0.2
 
         # Decrease if common legitimate scenarios
-        if process_tree.get('signed', False):
+        if process_tree.get("signed", False):
             confidence -= 0.1
 
         return min(1.0, max(0.0, confidence))
 
-    def _analyze_attack_path(self, graph: AttackGraph,
-                            path_ids: List[str]) -> AttackPath:
+    def _analyze_attack_path(self, graph: AttackGraph, path_ids: List[str]) -> AttackPath:
         """Analyzes an attack path and maps to kill chain"""
         nodes = [graph.nodes[nid] for nid in path_ids if nid in graph.nodes]
         edges = []
@@ -369,8 +380,7 @@ class GraphCorrelationEngine:
         for i in range(len(path_ids) - 1):
             source = path_ids[i]
             target = path_ids[i + 1]
-            matching_edges = [e for e in graph.edges
-                            if e.source_id == source and e.target_id == target]
+            matching_edges = [e for e in graph.edges if e.source_id == source and e.target_id == target]
             edges.extend(matching_edges)
 
         # Map to kill chain stages
@@ -388,7 +398,7 @@ class GraphCorrelationEngine:
             edges=edges,
             confidence=confidence,
             kill_chain_stages=kill_chain_stages,
-            ttps=ttps
+            ttps=ttps,
         )
 
     def _calculate_betweenness_centrality(self, graph: AttackGraph) -> Dict[str, float]:
@@ -401,7 +411,7 @@ class GraphCorrelationEngine:
         # For each pair of nodes, find shortest paths
         node_ids = list(graph.nodes.keys())
         for i, start in enumerate(node_ids):
-            for end in node_ids[i + 1:]:
+            for end in node_ids[i + 1 :]:
                 paths = graph.find_paths(start, end, max_depth=5)
 
                 # Count how many times each node appears in paths
@@ -411,40 +421,37 @@ class GraphCorrelationEngine:
 
         return dict(centrality)
 
-    def _map_to_kill_chain(self, nodes: List[EntityNode],
-                          edges: List[RelationshipEdge]) -> List[str]:
+    def _map_to_kill_chain(self, nodes: List[EntityNode], edges: List[RelationshipEdge]) -> List[str]:
         """Maps attack path to cyber kill chain stages"""
         stages = []
 
         # Analyze node types and relationships to infer stages
         for node in nodes:
-            if node.entity_type == 'external_connection':
-                stages.append('delivery')
-            elif node.entity_type == 'process' and 'exploit' in str(node.properties):
-                stages.append('exploitation')
-            elif node.entity_type == 'persistence_mechanism':
-                stages.append('installation')
-            elif node.entity_type == 'c2_connection':
-                stages.append('command_and_control')
+            if node.entity_type == "external_connection":
+                stages.append("delivery")
+            elif node.entity_type == "process" and "exploit" in str(node.properties):
+                stages.append("exploitation")
+            elif node.entity_type == "persistence_mechanism":
+                stages.append("installation")
+            elif node.entity_type == "c2_connection":
+                stages.append("command_and_control")
 
         return list(set(stages))
 
-    def _extract_ttps_from_path(self, nodes: List[EntityNode],
-                               edges: List[RelationshipEdge]) -> List[str]:
+    def _extract_ttps_from_path(self, nodes: List[EntityNode], edges: List[RelationshipEdge]) -> List[str]:
         """Extracts MITRE ATT&CK TTPs from attack path"""
         ttps = []
 
         # Analyze patterns to infer TTPs
         for edge in edges:
-            if edge.relationship_type == 'lateral_movement':
-                ttps.append('T1021')  # Remote Services
-            elif edge.relationship_type == 'credential_access':
-                ttps.append('T1003')  # Credential Dumping
+            if edge.relationship_type == "lateral_movement":
+                ttps.append("T1021")  # Remote Services
+            elif edge.relationship_type == "credential_access":
+                ttps.append("T1003")  # Credential Dumping
 
         return list(set(ttps))
 
-    def _calculate_path_confidence(self, nodes: List[EntityNode],
-                                  edges: List[RelationshipEdge]) -> float:
+    def _calculate_path_confidence(self, nodes: List[EntityNode], edges: List[RelationshipEdge]) -> float:
         """Calculates confidence in attack path"""
         if not nodes:
             return 0.0
@@ -460,19 +467,31 @@ class GraphCorrelationEngine:
     def _load_lolbin_signatures(self) -> List[str]:
         """Loads Living-off-the-Land binary signatures"""
         return [
-            'powershell', 'cmd', 'wmic', 'certutil', 'bitsadmin',
-            'mshta', 'regsvr32', 'rundll32', 'msiexec', 'wscript',
-            'cscript', 'installutil', 'regasm', 'regsvcs', 'msxsl'
+            "powershell",
+            "cmd",
+            "wmic",
+            "certutil",
+            "bitsadmin",
+            "mshta",
+            "regsvr32",
+            "rundll32",
+            "msiexec",
+            "wscript",
+            "cscript",
+            "installutil",
+            "regasm",
+            "regsvcs",
+            "msxsl",
         ]
 
     def _load_suspicious_relationships(self) -> List[Dict]:
         """Loads suspicious parent-child process relationships"""
         return [
-            {'parent': 'winword', 'child': 'powershell'},
-            {'parent': 'excel', 'child': 'powershell'},
-            {'parent': 'outlook', 'child': 'powershell'},
-            {'parent': 'winword', 'child': 'cmd'},
-            {'parent': 'excel', 'child': 'wmic'},
-            {'parent': 'adobe', 'child': 'powershell'},
-            {'parent': 'explorer', 'child': 'wscript'},
+            {"parent": "winword", "child": "powershell"},
+            {"parent": "excel", "child": "powershell"},
+            {"parent": "outlook", "child": "powershell"},
+            {"parent": "winword", "child": "cmd"},
+            {"parent": "excel", "child": "wmic"},
+            {"parent": "adobe", "child": "powershell"},
+            {"parent": "explorer", "child": "wscript"},
         ]

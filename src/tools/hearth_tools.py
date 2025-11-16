@@ -3,15 +3,15 @@ MCP Tools for HEARTH Integration
 Community-driven threat hunting knowledge base access
 """
 
-from typing import Dict, List, Optional
 import logging
+import os
+from typing import Dict, List, Optional
 
 from ..intelligence.hearth_integration import (
-    HEARTHRepository,
     HEARTHIntelligence,
-    HuntType
+    HEARTHRepository,
+    HuntType,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -27,17 +27,19 @@ class HEARTHTools:
             hearth_path: Path to HEARTH repository (auto-detected if None)
         """
         if hearth_path is None:
-            hearth_path = "/Users/sydney/code/07-other-projects/HEARTH"
+            hearth_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "HEARTH")
 
         self.repo = HEARTHRepository(hearth_path)
         self.intel = HEARTHIntelligence(self.repo)
 
-    async def search_community_hunts(self,
-                                    tactic: Optional[str] = None,
-                                    tags: Optional[List[str]] = None,
-                                    keyword: Optional[str] = None,
-                                    hunt_type: Optional[str] = None,
-                                    limit: int = 20) -> Dict:
+    async def search_community_hunts(
+        self,
+        tactic: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        keyword: Optional[str] = None,
+        hunt_type: Optional[str] = None,
+        limit: int = 20,
+    ) -> Dict:
         """
         Search HEARTH community hunt database
 
@@ -58,43 +60,27 @@ class HEARTHTools:
             # Convert hunt type string to enum
             h_type = None
             if hunt_type:
-                if hunt_type.lower() in ['flame', 'hypothesis']:
+                if hunt_type.lower() in ["flame", "hypothesis"]:
                     h_type = HuntType.FLAME
-                elif hunt_type.lower() in ['ember', 'baseline']:
+                elif hunt_type.lower() in ["ember", "baseline"]:
                     h_type = HuntType.EMBER
-                elif hunt_type.lower() in ['alchemy', 'model']:
+                elif hunt_type.lower() in ["alchemy", "model"]:
                     h_type = HuntType.ALCHEMY
 
             # Search hunts
-            hunts = self.repo.search_hunts(
-                tactic=tactic,
-                tags=tags,
-                hunt_type=h_type,
-                keyword=keyword,
-                limit=limit
-            )
+            hunts = self.repo.search_hunts(tactic=tactic, tags=tags, hunt_type=h_type, keyword=keyword, limit=limit)
 
             return {
-                'success': True,
-                'count': len(hunts),
-                'hunts': [hunt.to_dict() for hunt in hunts],
-                'filters': {
-                    'tactic': tactic,
-                    'tags': tags,
-                    'keyword': keyword,
-                    'hunt_type': hunt_type
-                },
-                'source': 'HEARTH Community Repository'
+                "success": True,
+                "count": len(hunts),
+                "hunts": [hunt.to_dict() for hunt in hunts],
+                "filters": {"tactic": tactic, "tags": tags, "keyword": keyword, "hunt_type": hunt_type},
+                "source": "HEARTH Community Repository",
             }
 
         except Exception as e:
             logger.error(f"Error searching HEARTH hunts: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'count': 0,
-                'hunts': []
-            }
+            return {"success": False, "error": str(e), "count": 0, "hunts": []}
 
     async def get_hunt_by_id(self, hunt_id: str) -> Dict:
         """
@@ -112,25 +98,13 @@ class HEARTHTools:
             hunt = self.repo.get_hunt_by_id(hunt_id)
 
             if not hunt:
-                return {
-                    'success': False,
-                    'error': f'Hunt {hunt_id} not found in HEARTH repository',
-                    'hunt_id': hunt_id
-                }
+                return {"success": False, "error": f"Hunt {hunt_id} not found in HEARTH repository", "hunt_id": hunt_id}
 
-            return {
-                'success': True,
-                'hunt': hunt.to_dict(),
-                'source': 'HEARTH Community Repository'
-            }
+            return {"success": True, "hunt": hunt.to_dict(), "source": "HEARTH Community Repository"}
 
         except Exception as e:
             logger.error(f"Error retrieving hunt {hunt_id}: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'hunt_id': hunt_id
-            }
+            return {"success": False, "error": str(e), "hunt_id": hunt_id}
 
     async def get_hunts_for_tactic(self, tactic: str, limit: int = 20) -> Dict:
         """
@@ -149,22 +123,16 @@ class HEARTHTools:
             hunts = self.repo.get_hunts_by_tactic(tactic, limit)
 
             return {
-                'success': True,
-                'tactic': tactic,
-                'count': len(hunts),
-                'hunts': [hunt.to_dict() for hunt in hunts],
-                'source': 'HEARTH Community Repository'
+                "success": True,
+                "tactic": tactic,
+                "count": len(hunts),
+                "hunts": [hunt.to_dict() for hunt in hunts],
+                "source": "HEARTH Community Repository",
             }
 
         except Exception as e:
             logger.error(f"Error getting hunts for tactic {tactic}: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'tactic': tactic,
-                'count': 0,
-                'hunts': []
-            }
+            return {"success": False, "error": str(e), "tactic": tactic, "count": 0, "hunts": []}
 
     async def get_hunts_for_technique(self, technique_id: str) -> Dict:
         """
@@ -182,29 +150,25 @@ class HEARTHTools:
             hunts = self.repo.get_hunts_by_technique(technique_id)
 
             return {
-                'success': True,
-                'technique_id': technique_id,
-                'count': len(hunts),
-                'hunts': [hunt.to_dict() for hunt in hunts],
-                'source': 'HEARTH Community Repository'
+                "success": True,
+                "technique_id": technique_id,
+                "count": len(hunts),
+                "hunts": [hunt.to_dict() for hunt in hunts],
+                "source": "HEARTH Community Repository",
             }
 
         except Exception as e:
             logger.error(f"Error getting hunts for technique {technique_id}: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'technique_id': technique_id,
-                'count': 0,
-                'hunts': []
-            }
+            return {"success": False, "error": str(e), "technique_id": technique_id, "count": 0, "hunts": []}
 
-    async def recommend_hunts(self,
-                            tactics: Optional[List[str]] = None,
-                            techniques: Optional[List[str]] = None,
-                            keywords: Optional[List[str]] = None,
-                            environment: Optional[str] = None,
-                            limit: int = 10) -> Dict:
+    async def recommend_hunts(
+        self,
+        tactics: Optional[List[str]] = None,
+        techniques: Optional[List[str]] = None,
+        keywords: Optional[List[str]] = None,
+        environment: Optional[str] = None,
+        limit: int = 10,
+    ) -> Dict:
         """
         Get personalized hunt recommendations from community knowledge
 
@@ -222,37 +186,32 @@ class HEARTHTools:
         """
         try:
             context = {
-                'tactics': tactics or [],
-                'techniques': techniques or [],
-                'keywords': keywords or [],
-                'environment': environment
+                "tactics": tactics or [],
+                "techniques": techniques or [],
+                "keywords": keywords or [],
+                "environment": environment,
             }
 
             recommendations = self.repo.recommend_hunts(context, limit)
 
             return {
-                'success': True,
-                'count': len(recommendations),
-                'recommendations': [
+                "success": True,
+                "count": len(recommendations),
+                "recommendations": [
                     {
-                        'hunt': hunt.to_dict(),
-                        'relevance_score': round(score, 2),
-                        'match_reasons': self._explain_match(hunt, context, score)
+                        "hunt": hunt.to_dict(),
+                        "relevance_score": round(score, 2),
+                        "match_reasons": self._explain_match(hunt, context, score),
                     }
                     for hunt, score in recommendations
                 ],
-                'context': context,
-                'source': 'HEARTH Community Repository'
+                "context": context,
+                "source": "HEARTH Community Repository",
             }
 
         except Exception as e:
             logger.error(f"Error generating recommendations: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'count': 0,
-                'recommendations': []
-            }
+            return {"success": False, "error": str(e), "count": 0, "recommendations": []}
 
     async def get_recent_community_hunts(self, days: int = 30, limit: int = 20) -> Dict:
         """
@@ -271,21 +230,16 @@ class HEARTHTools:
             hunts = self.repo.get_recent_hunts(days, limit)
 
             return {
-                'success': True,
-                'days': days,
-                'count': len(hunts),
-                'hunts': [hunt.to_dict() for hunt in hunts],
-                'source': 'HEARTH Community Repository'
+                "success": True,
+                "days": days,
+                "count": len(hunts),
+                "hunts": [hunt.to_dict() for hunt in hunts],
+                "source": "HEARTH Community Repository",
             }
 
         except Exception as e:
             logger.error(f"Error getting recent hunts: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'count': 0,
-                'hunts': []
-            }
+            return {"success": False, "error": str(e), "count": 0, "hunts": []}
 
     async def analyze_tactic_coverage(self) -> Dict:
         """
@@ -300,27 +254,20 @@ class HEARTHTools:
             coverage = self.intel.analyze_tactic_coverage()
 
             # Calculate overall statistics
-            total_hunts = sum(data['hunt_count'] for data in coverage.values())
+            total_hunts = sum(data["hunt_count"] for data in coverage.values())
 
             return {
-                'success': True,
-                'total_hunts': total_hunts,
-                'total_tactics': len(coverage),
-                'coverage_by_tactic': coverage,
-                'top_tactics': sorted(
-                    coverage.items(),
-                    key=lambda x: x[1]['hunt_count'],
-                    reverse=True
-                )[:10],
-                'source': 'HEARTH Community Repository'
+                "success": True,
+                "total_hunts": total_hunts,
+                "total_tactics": len(coverage),
+                "coverage_by_tactic": coverage,
+                "top_tactics": sorted(coverage.items(), key=lambda x: x[1]["hunt_count"], reverse=True)[:10],
+                "source": "HEARTH Community Repository",
             }
 
         except Exception as e:
             logger.error(f"Error analyzing tactic coverage: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     async def get_hearth_statistics(self) -> Dict:
         """
@@ -335,19 +282,16 @@ class HEARTHTools:
             stats = self.repo.get_hunt_statistics()
 
             return {
-                'success': True,
-                'statistics': stats,
-                'repository_url': 'https://github.com/THORCollective/HEARTH',
-                'live_database': 'https://thorcollective.github.io/HEARTH/',
-                'source': 'HEARTH Community Repository'
+                "success": True,
+                "statistics": stats,
+                "repository_url": "https://github.com/THORCollective/HEARTH",
+                "live_database": "https://thorcollective.github.io/HEARTH/",
+                "source": "HEARTH Community Repository",
             }
 
         except Exception as e:
             logger.error(f"Error getting HEARTH statistics: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     async def suggest_hunts_for_incident(self, incident_description: str) -> Dict:
         """
@@ -365,48 +309,45 @@ class HEARTHTools:
             hunts = self.intel.suggest_hunt_for_incident(incident_description)
 
             return {
-                'success': True,
-                'incident_description': incident_description,
-                'count': len(hunts),
-                'suggested_hunts': [hunt.to_dict() for hunt in hunts],
-                'source': 'HEARTH Community Repository'
+                "success": True,
+                "incident_description": incident_description,
+                "count": len(hunts),
+                "suggested_hunts": [hunt.to_dict() for hunt in hunts],
+                "source": "HEARTH Community Repository",
             }
 
         except Exception as e:
             logger.error(f"Error suggesting hunts for incident: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'count': 0,
-                'suggested_hunts': []
-            }
+            return {"success": False, "error": str(e), "count": 0, "suggested_hunts": []}
 
     def _explain_match(self, hunt, context, score) -> List[str]:
         """Generate explanation for why a hunt was recommended"""
         reasons = []
 
         # Check tactic matches
-        if context.get('tactics'):
-            for tactic in context['tactics']:
+        if context.get("tactics"):
+            for tactic in context["tactics"]:
                 if tactic.lower() in hunt.tactic.lower():
                     reasons.append(f"Matches tactic: {tactic}")
 
         # Check technique matches
-        if context.get('techniques'):
-            for technique in context['techniques']:
+        if context.get("techniques"):
+            for technique in context["techniques"]:
                 if any(technique in ref for ref in hunt.references):
                     reasons.append(f"References technique: {technique}")
 
         # Check keyword matches
-        if context.get('keywords'):
+        if context.get("keywords"):
             matched_keywords = []
-            for keyword in context['keywords']:
-                if (keyword.lower() in hunt.hypothesis.lower() or
-                    keyword.lower() in hunt.why_section.lower()):
+            for keyword in context["keywords"]:
+                if keyword.lower() in hunt.hypothesis.lower() or keyword.lower() in hunt.why_section.lower():
                     matched_keywords.append(keyword)
 
             if matched_keywords:
-                reasons.append(f"Keyword matches: {', '.join(matched_keywords)}")
+                reasons.append(
+                    f"Keyword matches: {
+                        ', '.join(matched_keywords)}"
+                )
 
         if not reasons:
             reasons.append("General relevance to context")

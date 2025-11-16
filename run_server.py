@@ -3,30 +3,30 @@
 Entry point for the Threat Hunting MCP Server
 """
 
-import asyncio
 import sys
-import logging
 from pathlib import Path
 
 # Add the src directory to Python path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from src.server import main
-
+# Import and run the MCP server directly
+# The FastMCP framework will handle the async event loop
 if __name__ == "__main__":
-    # Configure basic logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    
-    print("Starting Threat Hunting MCP Server...")
-    print("Press Ctrl+C to stop the server")
-    
+    from src.server import ThreatHuntingMCPServer
+    import structlog
+
+    logger = structlog.get_logger()
+
     try:
-        asyncio.run(main())
+        logger.info("Initializing Threat Hunting MCP Server")
+        server = ThreatHuntingMCPServer()
+
+        # FastMCP handles running the server - just execute it
+        # This will be run by the MCP framework's event loop
+        server.mcp.run()
+
     except KeyboardInterrupt:
-        print("\nServer stopped by user")
+        logger.info("Server stopped by user")
     except Exception as e:
-        print(f"Server error: {e}")
+        logger.error("Server initialization failed", error=str(e))
         sys.exit(1)

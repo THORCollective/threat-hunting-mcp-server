@@ -4,7 +4,7 @@ A next-generation Model Context Protocol (MCP) server that **hunts for behaviors
 
 ## Philosophy: Hunt Behaviors, Not Indicators
 
-This MCP server is designed around a core principle from the **Pyramid of Pain**:
+This MCP server is designed around a core principle from the **[Pyramid of Pain](https://detect-respond.blogspot.com/2013/03/the-pyramid-of-pain.html)**:
 
 ```
         TOUGH (Hunt Here!)
@@ -134,8 +134,9 @@ Detection persists: API call patterns remain consistent
 
 1. **[Quick Reference Card](BEHAVIORAL_HUNTING_QUICK_REF.md)** - One-page behavioral hunting cheat sheet
 2. **[Behavioral Hunting Guide](BEHAVIORAL_HUNTING_GUIDE.md)** - Complete guide to hunting behaviors vs indicators
-3. **[HEARTH Community Hunts](#hearth-community-integration)** - 50+ real-world behavioral hunt hypotheses
-4. **Example Hunts Below** - See practical examples of TTP-based detection
+3. **[PEAK Hunt Example](examples/PEAK-Hunt-Example-LSASS-Memory.md)** - Complete example hunt report using PEAK Framework
+4. **[HEARTH Community Hunts](#hearth-community-integration)** - 50+ real-world behavioral hunt hypotheses
+5. **[PEAK Template](templates/PEAK-Template.md)** - Official PEAK Framework template from THOR Collective
 
 ### Quick Behavioral Hunt Examples
 
@@ -433,6 +434,104 @@ Analyze MITRE ATT&CK tactic coverage.
 
 ```python
 result = await analyze_tactic_coverage()
+```
+
+#### PEAK Framework Tools ⭐ NEW
+
+##### `create_behavioral_hunt`
+Create a behavioral PEAK hunt focused on a MITRE ATT&CK technique.
+
+```python
+result = await create_behavioral_hunt(
+    technique_id="T1003.001",
+    technique_name="LSASS Memory",
+    tactic="Credential Access",
+    hypothesis="Hunt for processes accessing LSASS memory for credential theft",
+    hunter_name="Alice Hunter",
+    location="Corporate Windows Servers",
+    data_sources=[
+        {
+            "source": "Sysmon Event ID 10 (ProcessAccess)",
+            "key_fields": "SourceImage, TargetImage, GrantedAccess, CallTrace",
+            "example": 'TargetImage="*lsass.exe" with GrantedAccess=0x1010'
+        },
+        {
+            "source": "Windows Security Event 4656",
+            "key_fields": "ProcessName, ObjectName, AccessMask",
+            "example": "Process accessing lsass.exe with handle access"
+        }
+    ],
+    actor="APT29",  # Optional
+    threat_intel_sources=["MITRE ATT&CK", "CISA Alert AA21-148A"],
+    related_tickets={"SOC/IR": "INC-2024-001"}
+)
+```
+
+##### `create_custom_peak_hunt`
+Create a custom PEAK hunt with full control over all fields.
+
+```python
+result = await create_custom_peak_hunt(
+    hunt_title="Hunt for Kerberoasting Activity",
+    hypothesis="Detect Kerberoasting by hunting for RC4 TGS requests",
+    hunter_name="Bob Hunter",
+    behavior_description="Kerberoasting (T1558.003) - RC4 ticket requests for service accounts",
+    location="Active Directory Domain Controllers",
+    data_sources=[
+        {
+            "source": "Windows Event 4769",
+            "key_fields": "ServiceName, TicketEncryptionType, IpAddress",
+            "example": "TicketEncryptionType=0x17 (RC4) for service accounts"
+        }
+    ],
+    mitre_techniques=["T1558.003 - Kerberoasting"],
+    mitre_tactics=["Credential Access"],
+    hunt_type="H"  # H = Hypothesis-driven, B = Baseline, M = Model-Assisted
+)
+```
+
+##### `get_peak_template`
+Get the PEAK Framework template for reference.
+
+```python
+result = await get_peak_template()
+# Returns template content, usage instructions, and reference link
+```
+
+##### `list_peak_hunts`
+List all created PEAK hunts.
+
+```python
+result = await list_peak_hunts()
+# Returns list of hunts with IDs, filenames, and creation dates
+```
+
+##### `suggest_behavioral_hunt_from_ioc`
+**KEY TOOL**: Pivot from IOCs to behavioral hunts (Pyramid of Pain philosophy).
+
+```python
+# When you receive an IOC, pivot to behavioral hunting
+result = await suggest_behavioral_hunt_from_ioc(
+    ioc="192.168.1.100",
+    ioc_type="ip"
+)
+# Returns behavioral hunt suggestions focusing on TTPs instead of the IOC
+```
+
+**Example Response**:
+```json
+{
+  "pyramid_warning": "⚠️  IP is at the BOTTOM of the Pyramid of Pain. Adversaries change these rapidly.",
+  "behavioral_alternatives": [
+    {
+      "technique": "T1071.001 - Application Layer Protocol (Web)",
+      "hunt_focus": "C2 beaconing behavior patterns",
+      "hypothesis": "Hunt for regular interval communication patterns...",
+      "pyramid_level": "TTPs (Top)"
+    }
+  ],
+  "recommendation": "Create a behavioral PEAK hunt using one of the suggestions above"
+}
 ```
 
 ### MCP Resources

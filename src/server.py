@@ -17,6 +17,7 @@ except ImportError:
 from .models.hunt import HuntType, ThreatHunt
 from .security.security_manager import CacheManager, SecurityManager
 from .tools.hearth_tools import HEARTHTools
+from .tools.peak_tools import PEAKTools
 
 # # Configure logging - write to file instead of stdout to avoid interfering with MCP stdio protocol
 # import sys
@@ -83,6 +84,10 @@ class ThreatHuntingMCPServer:
         # Initialize HEARTH community integration
         hearth_path = getattr(settings, "hearth_path", None)
         self.hearth = HEARTHTools(hearth_path) if hearth_path else None
+
+        # Initialize PEAK framework tools
+        hunts_directory = getattr(settings, "hunts_directory", None)
+        self.peak = PEAKTools(hunts_directory)
 
         # Initialize security and caching
         security_config = {
@@ -533,6 +538,156 @@ class ThreatHuntingMCPServer:
                 except Exception as e:
                     logger.error("Error getting recent hunts", error=str(e))
                     return {"error": str(e), "status": "failed"}
+
+        # ==================== PEAK Framework Tools ====================
+
+        @self.mcp.tool()
+        async def create_behavioral_hunt(
+            technique_id: str,
+            technique_name: str,
+            tactic: str,
+            hypothesis: str,
+            hunter_name: str,
+            location: str,
+            data_sources: List[Dict[str, str]],
+            actor: Optional[str] = None,
+            threat_intel_sources: Optional[List[str]] = None,
+            related_tickets: Optional[Dict[str, str]] = None,
+        ) -> Dict:
+            """
+            Creates a behavioral PEAK hunt focused on a MITRE ATT&CK technique.
+
+            This tool creates threat hunting reports using the PEAK Framework
+            (Prepare, Execute, Act with Knowledge) with emphasis on behavioral
+            hunting at the top of the Pyramid of Pain.
+
+            Args:
+                technique_id: MITRE technique ID (e.g., "T1003.001")
+                technique_name: Name of the technique (e.g., "LSASS Memory")
+                tactic: MITRE tactic (e.g., "Credential Access")
+                hypothesis: Hunt hypothesis statement
+                hunter_name: Name of the threat hunter
+                location: Where to hunt (e.g., "Corporate Windows Servers")
+                data_sources: List of log sources with format:
+                    [{"source": "Sysmon", "key_fields": "process_name, command_line",
+                      "example": "mimikatz.exe execution"}]
+                actor: Optional threat actor (behavioral hunting doesn't require this)
+                threat_intel_sources: Optional list of threat intel sources
+                related_tickets: Optional dict of related tickets
+
+            Returns:
+                Dictionary with hunt details and file path
+            """
+            try:
+                return await self.peak.create_behavioral_hunt(
+                    technique_id=technique_id,
+                    technique_name=technique_name,
+                    tactic=tactic,
+                    hypothesis=hypothesis,
+                    hunter_name=hunter_name,
+                    location=location,
+                    data_sources=data_sources,
+                    actor=actor,
+                    threat_intel_sources=threat_intel_sources,
+                    related_tickets=related_tickets,
+                )
+            except Exception as e:
+                logger.error("Error creating behavioral hunt", error=str(e))
+                return {"error": str(e), "status": "failed"}
+
+        @self.mcp.tool()
+        async def create_custom_peak_hunt(
+            hunt_title: str,
+            hypothesis: str,
+            hunter_name: str,
+            behavior_description: str,
+            location: str,
+            data_sources: List[Dict[str, str]],
+            mitre_techniques: List[str],
+            mitre_tactics: List[str],
+            hunt_type: str = "H",
+        ) -> Dict:
+            """
+            Creates a custom PEAK hunt report with full control over all fields.
+
+            Args:
+                hunt_title: Title of the hunt
+                hypothesis: Hunt hypothesis statement
+                hunter_name: Name of the threat hunter
+                behavior_description: Description of the behavior being hunted (TTPs)
+                location: Where to hunt
+                data_sources: List of log sources
+                mitre_techniques: List of MITRE technique IDs
+                mitre_tactics: List of MITRE tactics
+                hunt_type: H (Hypothesis), B (Baseline), or M (Model-Assisted)
+
+            Returns:
+                Dictionary with hunt details and file path
+            """
+            try:
+                return await self.peak.create_custom_peak_hunt(
+                    hunt_title=hunt_title,
+                    hypothesis=hypothesis,
+                    hunter_name=hunter_name,
+                    behavior_description=behavior_description,
+                    location=location,
+                    data_sources=data_sources,
+                    mitre_techniques=mitre_techniques,
+                    mitre_tactics=mitre_tactics,
+                    hunt_type=hunt_type,
+                )
+            except Exception as e:
+                logger.error("Error creating custom PEAK hunt", error=str(e))
+                return {"error": str(e), "status": "failed"}
+
+        @self.mcp.tool()
+        async def get_peak_template() -> Dict:
+            """
+            Returns the PEAK Framework template for reference.
+
+            Returns:
+                Dictionary with template content and usage instructions
+            """
+            try:
+                return await self.peak.get_peak_template()
+            except Exception as e:
+                logger.error("Error getting PEAK template", error=str(e))
+                return {"error": str(e), "status": "failed"}
+
+        @self.mcp.tool()
+        async def list_peak_hunts() -> Dict:
+            """
+            Lists all PEAK hunts in the hunts directory.
+
+            Returns:
+                Dictionary with list of hunts
+            """
+            try:
+                return await self.peak.list_hunts()
+            except Exception as e:
+                logger.error("Error listing PEAK hunts", error=str(e))
+                return {"error": str(e), "status": "failed"}
+
+        @self.mcp.tool()
+        async def suggest_behavioral_hunt_from_ioc(ioc: str, ioc_type: str) -> Dict:
+            """
+            Suggests behavioral hunt alternatives when given an IOC.
+
+            This is a KEY tool that pivots from bottom-of-pyramid IOCs to
+            top-of-pyramid behavioral hunts, following the Pyramid of Pain philosophy.
+
+            Args:
+                ioc: The indicator of compromise
+                ioc_type: Type of IOC (hash, ip, domain, url, etc.)
+
+            Returns:
+                Dictionary with behavioral hunt suggestions
+            """
+            try:
+                return await self.peak.suggest_behavioral_hunt_from_ioc(ioc, ioc_type)
+            except Exception as e:
+                logger.error("Error suggesting behavioral hunt", error=str(e))
+                return {"error": str(e), "status": "failed"}
 
     def _register_resources(self):
         """Registers MCP resources"""
